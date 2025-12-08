@@ -1,39 +1,119 @@
 "use client"
 
 import { useState } from "react"
-import { MainLayout } from "@/components/layout/main-layout"
-import { Dashboard } from "@/components/dashboard/dashboard"
-import { TicketList } from "@/components/tickets/ticket-list"
-import { CategoryManagement } from "@/components/management/category-management"
-import { RoomManagement } from "@/components/management/room-management"
-import { ReportDashboard } from "@/components/reports/report-dashboard"
+import { Button } from "@/components/ui/button"
+import Link from "next/link"
 
-type PageView = "dashboard" | "tickets" | "categories" | "rooms" | "reports" | "escalations"
+export default function LandingPage() {
+  const [language, setLanguage] = useState<"en" | "vi">("en")
 
-export default function Home() {
-  const [currentView, setCurrentView] = useState<PageView>("dashboard")
-  const [userRole, setUserRole] = useState<"admin" | "technician" | "staff">("admin")
-
-  const renderView = () => {
-    switch (currentView) {
-      case "dashboard":
-        return <Dashboard userRole={userRole} />
-      case "tickets":
-        return <TicketList userRole={userRole} />
-      case "categories":
-        return <CategoryManagement />
-      case "rooms":
-        return <RoomManagement />
-      case "reports":
-        return <ReportDashboard />
-      default:
-        return <Dashboard userRole={userRole} />
-    }
+  const t = {
+    en: {
+      title: "FPT Facility Helpdesk",
+      subtitle: "Hệ thống quản lý CSVC & WiFi",
+      description: "Submit facility requests, track your tickets, and resolve issues faster",
+      loginStudent: "Login as Student",
+      loginStaff: "Login as Staff",
+      loginAdmin: "Admin Dashboard",
+      features: "Real-time Tracking • SLA Management • Fast Resolution",
+    },
+    vi: {
+      title: "FPT Facility Helpdesk",
+      subtitle: "Hệ thống quản lý CSVC & WiFi",
+      description: "Gửi yêu cầu CSVC, theo dõi ticket và giải quyết vấn đề nhanh chóng",
+      loginStudent: "Đăng nhập - Sinh viên",
+      loginStaff: "Đăng nhập - Nhân viên",
+      loginAdmin: "Bảng điều khiển Admin",
+      features: "Theo dõi thực tế • Quản lý SLA • Giải quyết nhanh",
+    },
   }
 
+  const content = t[language]
+
   return (
-    <MainLayout currentView={currentView} onViewChange={setCurrentView} userRole={userRole} onRoleChange={setUserRole}>
-      {renderView()}
-    </MainLayout>
+    <div className="min-h-screen bg-gradient-to-br from-background to-accent/5 flex flex-col">
+      {/* Header */}
+      <header className="border-b border-border/40 backdrop-blur-sm sticky top-0 z-50">
+        <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
+              <span className="text-white font-bold text-sm">FPT</span>
+            </div>
+            <h1 className="font-bold text-lg hidden sm:block">Facility Helpdesk</h1>
+          </div>
+
+          {/* Language Toggle */}
+          <button
+            onClick={() => setLanguage(language === "en" ? "vi" : "en")}
+            className="px-3 py-1 rounded-md bg-secondary text-secondary-foreground hover:bg-secondary/80 transition-colors text-sm font-medium"
+          >
+            {language === "en" ? "Tiếng Việt" : "English"}
+          </button>
+        </div>
+      </header>
+
+      {/* Main Content */}
+      <main className="flex-1 flex items-center justify-center px-4 py-12">
+        <div className="max-w-2xl w-full text-center space-y-8">
+          {/* Hero Section */}
+          <div className="space-y-4">
+            <h2 className="text-4xl sm:text-5xl font-bold text-foreground">{content.title}</h2>
+            <p className="text-base sm:text-lg text-muted-foreground">{content.subtitle}</p>
+            <p className="text-sm sm:text-base text-muted-foreground/70 max-w-xl mx-auto">{content.description}</p>
+            <p className="text-xs sm:text-sm text-primary font-medium">{content.features}</p>
+          </div>
+
+          {/* Login Buttons */}
+          <div className="grid sm:grid-cols-3 gap-4 pt-8">
+            <Link href="/user/dashboard" className="block">
+              <Button className="w-full h-12 text-base font-semibold" variant="default">
+                {content.loginStudent}
+              </Button>
+            </Link>
+
+            <Link href="/staff/dashboard" className="block">
+              <Button className="w-full h-12 text-base font-semibold" variant="secondary">
+                {content.loginStaff}
+              </Button>
+            </Link>
+
+            <Link href="/admin/dashboard" className="block">
+              <Button className="w-full h-12 text-base font-semibold bg-transparent" variant="outline">
+                {content.loginAdmin}
+              </Button>
+            </Link>
+          </div>
+
+          {/* Quick Info */}
+          <div className="grid sm:grid-cols-3 gap-4 pt-12 border-t border-border/40">
+            <div className="space-y-2">
+              <div className="text-2xl font-bold text-primary">24/7</div>
+              <div className="text-sm text-muted-foreground">
+                {language === "en" ? "Available Anytime" : "Luôn sẵn sàng"}
+              </div>
+            </div>
+            <div className="space-y-2">
+              <div className="text-2xl font-bold text-primary">SLA</div>
+              <div className="text-sm text-muted-foreground">
+                {language === "en" ? "Guaranteed Response" : "Cam kết phản hồi"}
+              </div>
+            </div>
+            <div className="space-y-2">
+              <div className="text-2xl font-bold text-primary">Real-time</div>
+              <div className="text-sm text-muted-foreground">
+                {language === "en" ? "Live Updates" : "Cập nhật trực tiếp"}
+              </div>
+            </div>
+          </div>
+        </div>
+      </main>
+
+      {/* Footer */}
+      <footer className="border-t border-border/40 bg-background/50">
+        <div className="max-w-7xl mx-auto px-4 py-6 text-center text-sm text-muted-foreground">
+          <p>© 2025 FPT University Facility Helpdesk System</p>
+        </div>
+      </footer>
+    </div>
   )
 }
