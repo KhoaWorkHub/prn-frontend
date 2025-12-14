@@ -1,6 +1,7 @@
 // API Configuration
 export const API_CONFIG = {
-  BASE_URL: process.env.NEXT_PUBLIC_API_URL || 'http://34.169.143.69:8080',
+  // Use relative URLs for Vercel rewrites to proxy to backend
+  BASE_URL: typeof window === 'undefined' ? 'http://34.169.143.69:8080' : '',
   TIMEOUT: 30000,
 } as const;
 

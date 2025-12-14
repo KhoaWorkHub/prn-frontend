@@ -144,9 +144,10 @@ export default function LoginPage() {
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-sm">
                 <p className="font-semibold text-blue-900 mb-2">🚀 Demo Credentials:</p>
                 <div className="space-y-1 text-blue-700">
-                  <p>• Admin: <code className="bg-blue-100 px-2 py-0.5 rounded">admin</code> / <code className="bg-blue-100 px-2 py-0.5 rounded">Admin@123</code></p>
-                  <p>• Manager: <code className="bg-blue-100 px-2 py-0.5 rounded">manager</code> / <code className="bg-blue-100 px-2 py-0.5 rounded">Manager@123</code></p>
-                  <p>• Staff: <code className="bg-blue-100 px-2 py-0.5 rounded">staff</code> / <code className="bg-blue-100 px-2 py-0.5 rounded">Staff@123</code></p>
+                  <p>• Admin: <code className="bg-blue-100 px-2 py-0.5 rounded">administrator@gmail.com</code> / <code className="bg-blue-100 px-2 py-0.5 rounded">administrator@1</code></p>
+                  <p>• Manager: <code className="bg-blue-100 px-2 py-0.5 rounded">manager1@gmail.com</code> / <code className="bg-blue-100 px-2 py-0.5 rounded">manager@1</code></p>
+                  <p>• Staff: <code className="bg-blue-100 px-2 py-0.5 rounded">staff1@gmail.com</code> / <code className="bg-blue-100 px-2 py-0.5 rounded">staff@1</code></p>
+                  <p>• Reporter: <code className="bg-blue-100 px-2 py-0.5 rounded">reporter1@gmail.com</code> / <code className="bg-blue-100 px-2 py-0.5 rounded">reporter@1</code></p>
                 </div>
               </div>
             </CardFooter>
