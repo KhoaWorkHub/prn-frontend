@@ -3,6 +3,8 @@
 import type React from "react"
 
 import { useState } from "react"
+import { useRouter } from "next/navigation"
+import { useAuth } from "@/lib/auth-context"
 import { Button } from "@/components/ui/button"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Menu, X, Settings, LogOut, Globe } from "lucide-react"
@@ -18,6 +20,8 @@ interface MainLayoutProps {
 export function MainLayout({ children, currentView, onViewChange, userRole, onRoleChange }: MainLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const [language, setLanguage] = useState<"en" | "vi">("en")
+  const router = useRouter()
+  const { logout } = useAuth()
 
   const navItems = [
     { id: "dashboard", label: language === "en" ? "Dashboard" : "Bảng điều khiển", icon: "📊" },
@@ -116,7 +120,12 @@ export function MainLayout({ children, currentView, onViewChange, userRole, onRo
               >
                 {language === "en" ? "Switch Role" : "Đổi vai trò"}
               </DropdownMenuItem>
-              <DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={async () => {
+                  await logout();
+                  router.push('/auth/login');
+                }}
+              >
                 <LogOut size={16} className="mr-2" />
                 {language === "en" ? "Logout" : "Đăng xuất"}
               </DropdownMenuItem>
