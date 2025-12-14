@@ -1,11 +1,47 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
+import { useRouter } from "next/navigation"
+import { useAuth } from "@/lib/auth-context"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
+import { Loader2 } from "lucide-react"
 
 export default function LandingPage() {
   const [language, setLanguage] = useState<"en" | "vi">("en")
+  const { user, loading } = useAuth()
+  const router = useRouter()
+
+  // Auto-redirect if already logged in
+  useEffect(() => {
+    if (!loading && user) {
+      // Redirect based on role - matching backend exactly
+      if (user.roles.includes('Administrator') || user.roles.includes('Manager')) {
+        router.push('/admin/dashboard')
+      } else if (user.roles.includes('Staff')) {
+        router.push('/staff/dashboard')
+      } else if (user.roles.includes('Reporter')) {
+        router.push('/user/dashboard')
+      }
+    }
+  }, [user, loading, router])
+
+  // Show loading while checking auth
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-white to-purple-50">
+        <div className="text-center">
+          <Loader2 className="h-12 w-12 animate-spin text-blue-600 mx-auto mb-4" />
+          <p className="text-gray-600">Loading...</p>
+        </div>
+      </div>
+    )
+  }
+
+  // Only show landing page if NOT logged in
+  if (user) {
+    return null // Will redirect via useEffect
+  }
 
   const t = {
     en: {

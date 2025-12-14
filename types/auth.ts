@@ -1,28 +1,27 @@
-// User Roles
+// User Roles - EXACTLY matching backend DbSeeder
 export enum UserRole {
-  ADMIN = 'Admin',
-  MANAGER = 'Manager',
-  STAFF = 'Staff',
-  REPORTER = 'Reporter',
+  ADMINISTRATOR = 'Administrator',  // Backend: "Administrator"
+  MANAGER = 'Manager',               // Backend: "Manager"
+  STAFF = 'Staff',                   // Backend: "Staff"
+  REPORTER = 'Reporter',             // Backend: "Reporter"
 }
 
-// Auth Types
+// Auth Types matching backend exactly
 export interface LoginRequest {
-  username: string;
+  email: string;      // Backend uses email, not username!
   password: string;
 }
 
 export interface LoginResponse {
-  accessToken: string;
-  refreshToken: string;
-  expiresIn: number;
+  accessToken: string; // Backend returns string directly
+  // refreshToken is in httpOnly cookie, not in response!
 }
 
 export interface RegisterRequest {
-  username: string;
   email: string;
+  username: string;    // Backend calls it userName but we use username
   password: string;
-  confirmPassword: string;
+  // Backend doesn't require confirmPassword
 }
 
 export interface User {
@@ -35,10 +34,10 @@ export interface User {
 }
 
 export interface RefreshTokenRequest {
-  refreshToken: string;
+  // Backend reads from cookie, no request body needed
 }
 
 export interface RefreshTokenResponse {
-  accessToken: string;
-  refreshToken: string;
+  accessToken: string; // Backend returns string directly
+  // refreshToken updated in cookie
 }

@@ -13,7 +13,7 @@ import { toast } from 'sonner';
 
 export default function LoginPage() {
   const { login } = useAuth();
-  const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -24,12 +24,12 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      await login({ username, password });
+      await login({ email, password }); // Backend expects email, not username
       toast.success('Welcome back!', {
         description: 'You have successfully logged in.',
       });
     } catch (err: any) {
-      const errorMessage = err.response?.data?.message || 'Invalid username or password';
+      const errorMessage = err.response?.data?.message || 'Invalid email or password';
       setError(errorMessage);
       toast.error('Login failed', {
         description: errorMessage,
@@ -83,15 +83,15 @@ export default function LoginPage() {
               )}
 
               <div className="space-y-2">
-                <Label htmlFor="username" className="text-sm font-medium">
-                  Username
+                <Label htmlFor="email" className="text-sm font-medium">
+                  Email
                 </Label>
                 <Input
-                  id="username"
-                  type="text"
-                  placeholder="Enter your username"
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
+                  id="email"
+                  type="email"
+                  placeholder="Enter your email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
                   required
                   disabled={loading}
                   className="h-12 text-base transition-all focus:ring-2 focus:ring-blue-500"

@@ -10,23 +10,28 @@ import type {
 } from '@/types/auth';
 
 export const authService = {
-  // Login
-  async login(credentials: LoginRequest): Promise<LoginResponse> {
-    const response = await apiClient.post<LoginResponse>(
+  // Login - Backend returns string (accessToken), refreshToken in cookie
+  async login(credentials: LoginRequest): Promise<string> {
+    const response = await apiClient.post<string>(
       API_ENDPOINTS.AUTH.LOGIN,
       credentials
     );
     
-    const { accessToken, refreshToken } = response.data;
+    // Backend returns accessToken as string directly
+    const accessToken = response.data;
     setToken(accessToken);
-    setRefreshToken(refreshToken);
+    // refreshToken is set in httpOnly cookie by backend
     
-    return response.data;
+    return accessToken;
   },
 
-  // Register
+  // Register - Backend returns 201 with no body
   async register(data: RegisterRequest): Promise<void> {
-    await apiClient.post(API_ENDPOINTS.AUTH.REGISTER, data);
+    await apiClient.post(API_ENDPOINTS.AUTH.REGISTER, {
+      email: data.email,
+      userName: data.username, // Backend expects userName (camelCase)
+      password: data.password,
+    });
   },
 
   // Get current user
@@ -35,26 +40,32 @@ export const authService = {
     return response.data;
   },
 
-  // Refresh token
-  async refreshToken(refreshToken: string): Promise<RefreshTokenResponse> {
-    const response = await apiClient.post<RefreshTokenResponse>(
+  // Refresh token - Backend reads from cookie
+  async refreshToken(): Promise<string> {
+    const response = await apiClient.post<string>(
       API_ENDPOINTS.AUTH.REFRESH,
-      { refreshToken }
+      {}, // No body needed, backend reads from cookie
+      {
+        headers: {
+          Authorization: `Bearer ${getToken()}`,
+        },
+      }
     );
     
-    const { accessToken, refreshToken: newRefreshToken } = response.data;
+    const accessToken = response.data;
     setToken(accessToken);
-    setRefreshToken(newRefreshToken);
+    // refreshToken updated in cookie by backend
     
-    return response.data;
+    return accessToken;
   },
 
-  // Logout
+  // Logout - Clear cookie on backend
   async logout(): Promise<void> {
     try {
       await apiClient.post(API_ENDPOINTS.AUTH.LOGOUT);
     } finally {
       clearTokens();
+      // Backend also deletes refreshToken cookie
     }
   },
 };

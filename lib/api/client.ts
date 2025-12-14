@@ -41,6 +41,7 @@ const apiClient: AxiosInstance = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
+  withCredentials: true, // IMPORTANT: Enable cookies for refreshToken
 });
 
 // Request interceptor - Add auth token
@@ -68,22 +69,28 @@ apiClient.interceptors.response.use(
       originalRequest._retry = true;
 
       try {
-        const refreshToken = getRefreshToken();
-        if (refreshToken) {
-          const response = await axios.post(`${API_CONFIG.BASE_URL}/api/auth/refresh-token`, {
-            refreshToken,
-          });
-
-          const { accessToken, refreshToken: newRefreshToken } = response.data;
-          setToken(accessToken);
-          setRefreshToken(newRefreshToken);
-
-          if (originalRequest.headers) {
-            originalRequest.headers.Authorization = `Bearer ${accessToken}`;
+        // Backend reads refreshToken from cookie, no body needed
+        const response = await axios.post(
+          `${API_CONFIG.BASE_URL}/api/auth/refresh-token`,
+          {},
+          {
+            headers: {
+              Authorization: `Bearer ${getToken()}`,
+            },
+            withCredentials: true, // Send cookies
           }
+        );
 
-          return apiClient(originalRequest);
+        // Backend returns accessToken as string directly
+        const accessToken = response.data;
+        setToken(accessToken);
+        // refreshToken is updated in cookie automatically
+
+        if (originalRequest.headers) {
+          originalRequest.headers.Authorization = `Bearer ${accessToken}`;
         }
+
+        return apiClient(originalRequest);
       } catch (refreshError) {
         // Refresh failed, clear tokens and redirect to login
         clearTokens();

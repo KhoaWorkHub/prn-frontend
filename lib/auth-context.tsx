@@ -48,15 +48,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = async (credentials: LoginRequest) => {
     try {
       await authService.login(credentials);
-      await fetchCurrentUser();
+      const currentUser = await authService.getCurrentUser();
+      setUser(currentUser);
       
-      // Redirect based on role
-      if (user?.roles.includes('Admin') || user?.roles.includes('Manager')) {
+      // Redirect based on role - matching backend exactly
+      if (currentUser.roles.includes('Administrator') || currentUser.roles.includes('Manager')) {
         router.push('/admin/dashboard');
-      } else if (user?.roles.includes('Staff')) {
+      } else if (currentUser.roles.includes('Staff')) {
         router.push('/staff/dashboard');
-      } else {
+      } else if (currentUser.roles.includes('Reporter')) {
         router.push('/user/dashboard');
+      } else {
+        // Fallback for unknown roles
+        router.push('/');
       }
     } catch (error) {
       throw error;
