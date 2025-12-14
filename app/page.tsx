@@ -100,22 +100,16 @@ export default function LandingPage() {
           </div>
 
           {/* Login Buttons */}
-          <div className="grid sm:grid-cols-3 gap-4 pt-8">
-            <Link href="/user/dashboard" className="block">
+          <div className="flex flex-col sm:flex-row gap-4 pt-8 max-w-md mx-auto">
+            <Link href="/auth/login" className="flex-1">
               <Button className="w-full h-12 text-base font-semibold" variant="default">
-                {content.loginStudent}
+                {language === "en" ? "Login" : "Đăng nhập"}
               </Button>
             </Link>
 
-            <Link href="/staff/dashboard" className="block">
-              <Button className="w-full h-12 text-base font-semibold" variant="secondary">
-                {content.loginStaff}
-              </Button>
-            </Link>
-
-            <Link href="/admin/dashboard" className="block">
-              <Button className="w-full h-12 text-base font-semibold bg-transparent" variant="outline">
-                {content.loginAdmin}
+            <Link href="/auth/register" className="flex-1">
+              <Button className="w-full h-12 text-base font-semibold" variant="outline">
+                {language === "en" ? "Register" : "Đăng ký"}
               </Button>
             </Link>
           </div>
