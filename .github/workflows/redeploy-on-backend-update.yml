@@ -1,0 +1,50 @@
+name: Redeploy on Backend Update
+
+on:
+  repository_dispatch:
+    types: [backend-updated]
+  workflow_dispatch:
+    inputs:
+      reason:
+        description: 'Reason for manual redeploy'
+        required: false
+        default: 'Manual trigger'
+
+env:
+  VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+  VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+
+jobs:
+  redeploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 8
+
+      - name: Install Vercel CLI
+        run: npm install --global vercel@latest
+
+      - name: Deploy to Vercel
+        working-directory: ./prn-frontend
+        run: |
+          echo "🔄 Redeploying frontend due to backend update..."
+          vercel --prod --token=${{ secrets.VERCEL_TOKEN }} --force
+
+      - name: Notify deployment
+        run: |
+          echo "### 🔄 Frontend Redeployed!" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Trigger:** Backend API updated" >> $GITHUB_STEP_SUMMARY
+          echo "**Reason:** ${{ github.event.inputs.reason || 'Backend API update detected' }}" >> $GITHUB_STEP_SUMMARY
+          echo "**API:** ${{ secrets.NEXT_PUBLIC_API_URL }}" >> $GITHUB_STEP_SUMMARY

@@ -1,30 +1,50 @@
-# Facility helpdesk UI
+# 🏢 Campus Facility Helpdesk - Frontend
 
-*Automatically synced with your [v0.app](https://v0.app) deployments*
+Modern, production-ready Next.js frontend for campus facility management system.
 
-[![Deployed on Vercel](https://img.shields.io/badge/Deployed%20on-Vercel-black?style=for-the-badge&logo=vercel)](https://vercel.com/khoaworkhubs-projects/v0-facility-helpdesk-ui)
-[![Built with v0](https://img.shields.io/badge/Built%20with-v0.app-black?style=for-the-badge)](https://v0.app/chat/mlRxcHHFZmA)
+## 🌐 Live Demo
 
-## Overview
+**Production:** https://prn-frontend-a7nciafct-khoaworkhubs-projects.vercel.app
 
-This repository will stay in sync with your deployed chats on [v0.app](https://v0.app).
-Any changes you make to your deployed app will be automatically pushed to this repository from [v0.app](https://v0.app).
+**Backend API:** http://34.169.143.69:8080/swagger
 
-## Deployment
+---
 
-Your project is live at:
+## ✨ Features
 
-**[https://vercel.com/khoaworkhubs-projects/v0-facility-helpdesk-ui](https://vercel.com/khoaworkhubs-projects/v0-facility-helpdesk-ui)**
+- 🔐 JWT Authentication with auto-refresh
+- 🎫 Complete ticket management system
+- 👥 Role-based dashboards (Reporter, Staff, Manager, Admin)
+- 🎨 Modern UI with Tailwind CSS + shadcn/ui
+- 📱 Fully responsive design
+- ⚡ Optimized performance with Next.js 16
+- 🚀 Automated deployment with GitHub Actions
 
-## Build your app
+---
 
-Continue building your app on:
+## 🚀 Quick Start
 
-**[https://v0.app/chat/mlRxcHHFZmA](https://v0.app/chat/mlRxcHHFZmA)**
+```bash
+# Install dependencies
+pnpm install
 
-## How It Works
+# Run development server
+pnpm dev
 
-1. Create and modify your project using [v0.app](https://v0.app)
-2. Deploy your chats from the v0 interface
-3. Changes are automatically pushed to this repository
-4. Vercel deploys the latest version from this repository
+# Build for production
+pnpm build
+
+# Deploy to Vercel
+./deploy.sh
+```
+
+---
+
+## 📚 Documentation
+
+- [Integration Guide](./INTEGRATION_GUIDE.md) - API usage and code examples
+- [Deployment Guide](./DEPLOYMENT.md) - Deployment instructions and automation
+
+---
+
+**Made with ❤️ for Campus Facility Management**
