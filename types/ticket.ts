@@ -1,6 +1,8 @@
-// Ticket Status Enum
+// ===== ENUMS =====
+
 export enum TicketStatus {
   REPORTED = 'Reported',
+  WAITING_FOR_ASSIGNMENT = 'WaitingForAssignment',
   ASSIGNED = 'Assigned',
   REVIEWING = 'Reviewing',
   IN_PROGRESS = 'InProgress',
@@ -10,155 +12,131 @@ export enum TicketStatus {
   CLOSED = 'Closed',
 }
 
-// Ticket Severity
 export enum TicketSeverity {
-  LOW = 'Low',
-  MEDIUM = 'Medium',
-  HIGH = 'High',
-  CRITICAL = 'Critical',
+  A = 'A', // Highest priority
+  B = 'B',
+  C = 'C', // Lowest priority
 }
 
-// Closing Reason
-export enum ClosingReason {
+export enum TicketCloseReason {
   RESOLVED = 'Resolved',
+  REJECTED = 'Rejected',
   DUPLICATE = 'Duplicate',
-  FALSE_ISSUE = 'FalseIssue',
-  CANNOT_REPRODUCE = 'CannotReproduce',
+  CANCELLED = 'Cancelled',
 }
 
-// Base Ticket Interface
-export interface Ticket {
+export enum IssueStatus {
+  OPEN = 'Open',
+  IN_PROGRESS = 'InProgress',
+  RESOLVED = 'Resolved',
+}
+
+// ===== NESTED RESPONSE TYPES =====
+
+export interface RoomResponse {
+  roomId: string;
+  roomName: string;
+  campusId: string;
+}
+
+export interface FacilityTypeResponse {
+  facilityTypeId: string;
+  facilityName: string;
+}
+
+export interface UserResponse {
   id: string;
+  userName: string;
+  email: string;
+}
+
+export interface IssueTypeResponse {
+  issueTypeId: string;
+  issueName: string;
+  estimatedMinutes: number;
+}
+
+export interface TicketIssueResponse {
+  ticketIssueId: string;
+  ticketId: string;
+  issueTypeId: string;
+  status: IssueStatus;
+  issueType: IssueTypeResponse;
+}
+
+export interface TicketHistoryResponse {
+  ticketHistoryId: string;
+  ticketId: string;
+  fieldType: string;
+  oldValue: string | null;
+  newValue: string | null;
+  changedBy: string;
+  changedAt: string;
+  user: UserResponse;
+}
+
+// ===== MAIN TICKET RESPONSE =====
+
+export interface TicketResponse {
+  ticketId: string;
   title: string;
   description: string;
   status: TicketStatus;
   severity: TicketSeverity;
+  closeReason: TicketCloseReason | null;
   
-  // Relations
-  reporterId: string;
-  reporterName?: string;
-  assignedToId?: string;
-  assignedToName?: string;
-  
-  categoryId: string;
-  categoryName?: string;
-  
-  campusId: string;
-  campusName?: string;
-  
-  roomId?: string;
-  roomName?: string;
-  
-  location?: string;
-  
-  // Timestamps
   createdAt: string;
-  updatedAt: string;
-  acknowledgedAt?: string;
-  resolvedAt?: string;
-  closedAt?: string;
+  assignedAt: string | null;
+  resolvedAt: string | null;
+  dueDate: string | null;
+  closedAt: string | null;
   
-  // Closure
-  closingReason?: ClosingReason;
-  closingNote?: string;
+  // Foreign keys
+  roomId: string;
+  facilityTypeId: string;
+  reporterId: string;
+  resolverId: string | null;
   
-  // Attachments
-  attachments?: string[];
+  // Nested objects
+  room: RoomResponse;
+  facilityType: FacilityTypeResponse;
+  reporter: UserResponse;
+  resolver: UserResponse | null;
+  issues: TicketIssueResponse[];
+  histories: TicketHistoryResponse[];
 }
 
-// Create Ticket Request
+// ===== REQUEST TYPES =====
+
 export interface CreateTicketRequest {
   title: string;
   description: string;
   severity: TicketSeverity;
-  categoryId: string;
-  campusId: string;
-  roomId?: string;
-  location?: string;
-  attachments?: File[];
+  roomId: string;
+  facilityTypeId: string;
+  issueTypeIds: string[];
 }
 
-// Update Ticket Request
-export interface UpdateTicketRequest {
-  title?: string;
-  description?: string;
-  severity?: TicketSeverity;
-  categoryId?: string;
-  campusId?: string;
-  roomId?: string;
-  location?: string;
-}
-
-// Assign Ticket Request
-export interface AssignTicketRequest {
-  assignedToId: string;
-}
-
-// Update Progress Request
-export interface UpdateProgressRequest {
-  status: TicketStatus;
-  note: string;
-  attachments?: File[];
-}
-
-// Ticket Filters
-export interface TicketFilters {
-  status?: TicketStatus[];
-  severity?: TicketSeverity[];
-  categoryId?: string;
-  campusId?: string;
+export interface TicketParameters {
+  status?: TicketStatus;
+  facilityTypeId?: string;
   reporterId?: string;
-  assignedToId?: string;
-  dateFrom?: string;
-  dateTo?: string;
-  search?: string;
+  pageNumber?: number;
+  pageSize?: number;
 }
 
-// Pagination
-export interface PaginationParams {
-  page: number;
-  size: number;
-  sort?: string;
+// ===== PAGINATION =====
+
+export interface PaginationMetadata {
+  totalCount: number;
+  pageSize: number;
+  currentPage: number;
+  totalPages: number;
+  hasPrevious: boolean;
+  hasNext: boolean;
 }
 
 export interface PaginatedResponse<T> {
-  items: T[];
-  total: number;
-  page: number;
-  size: number;
-  totalPages: number;
-}
-
-// Ticket History
-export interface TicketHistory {
-  id: string;
-  ticketId: string;
-  action: string;
-  description: string;
-  userId: string;
-  userName: string;
-  createdAt: string;
-  metadata?: Record<string, any>;
-}
-
-// Category
-export interface Category {
-  id: string;
-  name: string;
-  description?: string;
-}
-
-// Campus
-export interface Campus {
-  id: string;
-  name: string;
-  address?: string;
-}
-
-// Room
-export interface Room {
-  id: string;
-  name: string;
-  campusId: string;
-  campusName?: string;
+  data: T[];
+  metadata: PaginationMetadata;
 }

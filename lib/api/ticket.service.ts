@@ -1,52 +1,40 @@
 import apiClient from './client';
 import { API_ENDPOINTS } from './config';
 import type {
-  Ticket,
+  TicketResponse,
   CreateTicketRequest,
-  UpdateTicketRequest,
-  AssignTicketRequest,
-  UpdateProgressRequest,
-  TicketFilters,
-  PaginationParams,
-  PaginatedResponse,
-  TicketHistory,
+  TicketParameters,
 } from '@/types/ticket';
 
 export const ticketService = {
   // Get tickets with filters and pagination
-  async getTickets(
-    filters?: TicketFilters,
-    pagination?: PaginationParams
-  ): Promise<PaginatedResponse<Ticket>> {
-    const params = {
-      ...filters,
-      ...pagination,
-    };
-    
-    const response = await apiClient.get<PaginatedResponse<Ticket>>(
+  // Backend returns array directly, pagination in X-Pagination header
+  async getTickets(params?: TicketParameters): Promise<TicketResponse[]> {
+    const response = await apiClient.get<TicketResponse[]>(
       API_ENDPOINTS.TICKETS.LIST,
       { params }
     );
+    
+    // TODO: Parse X-Pagination header if needed
+    // const paginationHeader = response.headers['x-pagination'];
     
     return response.data;
   },
 
   // Get ticket by ID
-  async getTicketById(id: string): Promise<Ticket> {
-    const response = await apiClient.get<Ticket>(
+  async getTicketById(id: string): Promise<TicketResponse> {
+    const response = await apiClient.get<TicketResponse>(
       API_ENDPOINTS.TICKETS.DETAIL(id)
     );
     return response.data;
   },
 
-  // Create ticket
-  async createTicket(data: CreateTicketRequest): Promise<Ticket> {
-    const formData = new FormData();
-    formData.append('title', data.title);
-    formData.append('description', data.description);
-    formData.append('severity', data.severity);
-    formData.append('categoryId', data.categoryId);
-    formData.append('campusId', data.campusId);
+  // Create ticket (Reporter only)
+  async createTicket(data: CreateTicketRequest): Promise<void> {
+    await apiClient.post(API_ENDPOINTS.TICKETS.CREATE, data);
+    // Backend returns 201 with no body
+  },
+};
     
     if (data.roomId) formData.append('roomId', data.roomId);
     if (data.location) formData.append('location', data.location);
