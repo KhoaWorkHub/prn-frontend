@@ -1,244 +1,275 @@
 "use client"
 
-import type React from "react"
-
-import { useState } from "react"
-import { Button } from "@/components/ui/button"
+import { useEffect, useState } from "react"
+import { useParams, useRouter } from "next/navigation"
+import { DashboardLayout } from "@/components/layout/dashboard-layout"
 import { Card } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import Link from "next/link"
-import { ChevronLeft, MessageSquare, Clock, CheckCircle, AlertCircle } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { Separator } from "@/components/ui/separator"
+import { ticketService } from "@/lib/api/ticket.service"
+import { TicketResponse, TicketStatus, TicketSeverity, IssueStatus } from "@/types/ticket"
+import { Loader2, ArrowLeft, Clock, User, MapPin, Wrench, AlertCircle, CheckCircle, XCircle } from "lucide-react"
+import { toast } from "sonner"
 
-export default function TicketDetailsPage({ params }: { params: { id: string } }) {
-  const [language, setLanguage] = useState<"en" | "vi">("en")
-  const [comment, setComment] = useState("")
+export default function TicketDetailPage() {
+  const params = useParams()
+  const router = useRouter()
+  const [ticket, setTicket] = useState<TicketResponse | null>(null)
+  const [loading, setLoading] = useState(true)
 
-  const t = {
-    en: {
-      details: "Ticket Details",
-      status: "Status",
-      priority: "Priority",
-      category: "Category",
-      room: "Room",
-      created: "Created",
-      updated: "Last Updated",
-      sla: "SLA",
-      assignedTo: "Assigned To",
-      description: "Description",
-      timeline: "Timeline",
-      comments: "Comments",
-      addComment: "Add Comment",
-      send: "Send",
-      noComments: "No comments yet",
-      high: "High",
-      medium: "Medium",
-      low: "Low",
-    },
-    vi: {
-      details: "Chi tiết Ticket",
-      status: "Trạng thái",
-      priority: "Mức độ ưu tiên",
-      category: "Loại vấn đề",
-      room: "Phòng",
-      created: "Ngày tạo",
-      updated: "Cập nhật lần cuối",
-      sla: "SLA",
-      assignedTo: "Được giao cho",
-      description: "Mô tả",
-      timeline: "Tiến độ",
-      comments: "Bình luận",
-      addComment: "Thêm bình luận",
-      send: "Gửi",
-      noComments: "Chưa có bình luận nào",
-      high: "Cao",
-      medium: "Trung bình",
-      low: "Thấp",
-    },
+  useEffect(() => {
+    const fetchTicket = async () => {
+      try {
+        const data = await ticketService.getTicketById(params.id as string)
+        setTicket(data)
+      } catch (error: any) {
+        toast.error("Không thể tải thông tin ticket", {
+          description: error.response?.data?.message || "Vui lòng thử lại"
+        })
+        router.push("/user/dashboard")
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    if (params.id) {
+      fetchTicket()
+    }
+  }, [params.id, router])
+
+  const getStatusInfo = (status: TicketStatus) => {
+    const statusMap = {
+      [TicketStatus.REPORTED]: { label: "Đã báo cáo", color: "bg-yellow-100 text-yellow-800", icon: AlertCircle },
+      [TicketStatus.WAITING_FOR_ASSIGNMENT]: { label: "Chờ phân công", color: "bg-orange-100 text-orange-800", icon: Clock },
+      [TicketStatus.ASSIGNED]: { label: "Đã phân công", color: "bg-blue-100 text-blue-800", icon: User },
+      [TicketStatus.REVIEWING]: { label: "Đang xem xét", color: "bg-purple-100 text-purple-800", icon: Clock },
+      [TicketStatus.IN_PROGRESS]: { label: "Đang xử lý", color: "bg-indigo-100 text-indigo-800", icon: Wrench },
+      [TicketStatus.WAITING_FOR_PART_APPROVAL]: { label: "Chờ duyệt linh kiện", color: "bg-amber-100 text-amber-800", icon: Clock },
+      [TicketStatus.WAITING_FOR_PARTS]: { label: "Chờ linh kiện", color: "bg-pink-100 text-pink-800", icon: Clock },
+      [TicketStatus.WAITING_FOR_CLOSE_APPROVAL]: { label: "Chờ duyệt đóng", color: "bg-teal-100 text-teal-800", icon: Clock },
+      [TicketStatus.CLOSED]: { label: "Đã đóng", color: "bg-green-100 text-green-800", icon: CheckCircle },
+    }
+    return statusMap[status] || { label: status, color: "bg-gray-100 text-gray-800", icon: AlertCircle }
   }
 
-  const content = t[language]
-
-  // Mock data
-  const ticket = {
-    id: "TK-001",
-    title: "WiFi not working in Room A301",
-    description: "The WiFi connection is completely down in room A301. No internet access at all.",
-    category: "WiFi",
-    room: "A301",
-    status: "in-progress",
-    priority: "high",
-    created: "2025-12-05 10:30 AM",
-    updated: "2025-12-05 02:15 PM",
-    sla: "2 hours",
-    assignedTo: "John Smith",
-    timeline: [
-      { time: "10:30 AM", action: "Ticket created", status: "open" },
-      { time: "10:45 AM", action: "Ticket assigned to John Smith", status: "assigned" },
-      { time: "02:15 PM", action: "In progress - checking WiFi router", status: "in-progress" },
-    ],
-    comments: [
-      {
-        author: "John Smith",
-        role: "Technician",
-        time: "02:15 PM",
-        text: "I am currently investigating the WiFi issue. Will update you shortly.",
-      },
-    ],
+  const getSeverityInfo = (severity: TicketSeverity) => {
+    const severityMap = {
+      [TicketSeverity.A]: { label: "Mức A - Cao nhất", color: "bg-red-100 text-red-800 border-red-300" },
+      [TicketSeverity.B]: { label: "Mức B - Trung bình", color: "bg-orange-100 text-orange-800 border-orange-300" },
+      [TicketSeverity.C]: { label: "Mức C - Thấp", color: "bg-blue-100 text-blue-800 border-blue-300" },
+    }
+    return severityMap[severity] || { label: severity, color: "bg-gray-100 text-gray-800" }
   }
 
-  const handleCommentSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    console.log("Comment submitted:", comment)
-    setComment("")
+  const getIssueStatusIcon = (status: IssueStatus) => {
+    switch (status) {
+      case IssueStatus.OPEN:
+        return <XCircle className="w-4 h-4 text-red-600" />
+      case IssueStatus.IN_PROGRESS:
+        return <Clock className="w-4 h-4 text-orange-600" />
+      case IssueStatus.RESOLVED:
+        return <CheckCircle className="w-4 h-4 text-green-600" />
+      default:
+        return <AlertCircle className="w-4 h-4 text-gray-600" />
+    }
   }
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleString('vi-VN', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    })
+  }
+
+  if (loading) {
+    return (
+      <DashboardLayout allowedRoles={['Reporter']} title="Chi Tiết Ticket">
+        <div className="flex justify-center py-12">
+          <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+        </div>
+      </DashboardLayout>
+    )
+  }
+
+  if (!ticket) {
+    return null
+  }
+
+  const statusInfo = getStatusInfo(ticket.status)
+  const severityInfo = getSeverityInfo(ticket.severity)
+  const StatusIcon = statusInfo.icon
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="border-b border-border sticky top-0 z-40 bg-background/95 backdrop-blur-sm">
-        <div className="max-w-4xl mx-auto px-4 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Link href="/user/dashboard" className="p-2 hover:bg-secondary rounded-lg transition-colors">
-              <ChevronLeft className="w-5 h-5" />
-            </Link>
-            <div>
-              <h1 className="font-bold text-lg">{content.details}</h1>
-              <p className="text-xs text-muted-foreground">{ticket.id}</p>
-            </div>
-          </div>
-          <button
-            onClick={() => setLanguage(language === "en" ? "vi" : "en")}
-            className="px-2 py-1 rounded text-xs bg-secondary hover:bg-secondary/80 transition-colors"
-          >
-            {language === "en" ? "VI" : "EN"}
-          </button>
-        </div>
-      </header>
+    <DashboardLayout allowedRoles={['Reporter']} title="Chi Tiết Ticket">
+      <div className="max-w-5xl mx-auto space-y-6">
+        {/* Back Button */}
+        <Button variant="ghost" onClick={() => router.back()}>
+          <ArrowLeft className="w-4 h-4 mr-2" />
+          Quay lại
+        </Button>
 
-      {/* Main Content */}
-      <main className="max-w-4xl mx-auto px-4 py-8">
-        {/* Ticket Header */}
-        <div className="mb-6">
-          <h2 className="text-2xl font-bold mb-4">{ticket.title}</h2>
-          <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
-            <Card className="p-3">
-              <p className="text-xs text-muted-foreground mb-1">{content.status}</p>
-              <Badge variant="outline" className="capitalize">
-                {ticket.status}
-              </Badge>
-            </Card>
-            <Card className="p-3">
-              <p className="text-xs text-muted-foreground mb-1">{content.priority}</p>
-              <Badge className="bg-red-100 text-red-800">{content.high}</Badge>
-            </Card>
-            <Card className="p-3">
-              <p className="text-xs text-muted-foreground mb-1">{content.category}</p>
-              <Badge variant="secondary">{ticket.category}</Badge>
-            </Card>
-            <Card className="p-3">
-              <p className="text-xs text-muted-foreground mb-1">{content.room}</p>
-              <p className="font-semibold text-sm">{ticket.room}</p>
-            </Card>
-            <Card className="p-3">
-              <p className="text-xs text-muted-foreground mb-1">{content.sla}</p>
-              <p className="font-semibold text-sm">{ticket.sla}</p>
-            </Card>
-          </div>
-        </div>
-
-        {/* Description */}
-        <Card className="p-6 mb-6">
-          <h3 className="font-semibold mb-3">{content.description}</h3>
-          <p className="text-muted-foreground text-sm">{ticket.description}</p>
-          <div className="mt-4 pt-4 border-t border-border flex flex-col sm:flex-row gap-4 text-sm">
-            <div>
-              <p className="text-muted-foreground">{content.created}</p>
-              <p className="font-medium">{ticket.created}</p>
-            </div>
-            <div>
-              <p className="text-muted-foreground">{content.updated}</p>
-              <p className="font-medium">{ticket.updated}</p>
-            </div>
-            <div>
-              <p className="text-muted-foreground">{content.assignedTo}</p>
-              <p className="font-medium">{ticket.assignedTo}</p>
-            </div>
-          </div>
-        </Card>
-
-        {/* Timeline */}
-        <Card className="p-6 mb-6">
-          <h3 className="font-semibold mb-4">{content.timeline}</h3>
-          <div className="space-y-4">
-            {ticket.timeline.map((event, index) => (
-              <div key={index} className="flex gap-4 pb-4 border-b border-border last:border-b-0 last:pb-0">
-                <div className="flex flex-col items-center">
-                  {event.status === "in-progress" ? (
-                    <Clock className="w-5 h-5 text-yellow-500" />
-                  ) : event.status === "completed" ? (
-                    <CheckCircle className="w-5 h-5 text-green-500" />
-                  ) : (
-                    <AlertCircle className="w-5 h-5 text-blue-500" />
-                  )}
-                </div>
-                <div className="flex-1">
-                  <p className="font-medium text-sm">{event.action}</p>
-                  <p className="text-xs text-muted-foreground">{event.time}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </Card>
-
-        {/* Comments */}
+        {/* Header Card */}
         <Card className="p-6">
-          <h3 className="font-semibold mb-4 flex items-center gap-2">
-            <MessageSquare className="w-5 h-5" />
-            {content.comments}
-          </h3>
-
-          {/* Comments List */}
-          <div className="space-y-4 mb-6 pb-6 border-b border-border">
-            {ticket.comments.length === 0 ? (
-              <p className="text-sm text-muted-foreground text-center py-4">{content.noComments}</p>
-            ) : (
-              ticket.comments.map((cmt, index) => (
-                <div key={index} className="flex gap-4">
-                  <div className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center flex-shrink-0">
-                    <span className="text-sm font-semibold">{cmt.author.charAt(0)}</span>
-                  </div>
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-1">
-                      <p className="font-medium text-sm">{cmt.author}</p>
-                      <Badge variant="outline" className="text-xs">
-                        {cmt.role}
-                      </Badge>
-                      <p className="text-xs text-muted-foreground">{cmt.time}</p>
-                    </div>
-                    <p className="text-sm text-muted-foreground">{cmt.text}</p>
-                  </div>
-                </div>
-              ))
-            )}
+          <div className="flex justify-between items-start mb-4">
+            <div className="flex-1">
+              <div className="flex items-center gap-3 mb-2">
+                <h1 className="text-2xl font-bold">{ticket.title}</h1>
+                <Badge className={statusInfo.color}>
+                  <StatusIcon className="w-4 h-4 mr-1" />
+                  {statusInfo.label}
+                </Badge>
+                <Badge variant="outline" className={severityInfo.color}>
+                  {severityInfo.label}
+                </Badge>
+              </div>
+              <p className="text-sm text-gray-500">Ticket ID: {ticket.ticketId}</p>
+            </div>
           </div>
 
-          {/* Add Comment Form */}
-          <form onSubmit={handleCommentSubmit} className="space-y-3">
-            <textarea
-              value={comment}
-              onChange={(e) => setComment(e.target.value)}
-              placeholder={content.addComment}
-              rows={3}
-              className="w-full px-4 py-2 rounded-lg border border-input bg-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 resize-none"
-            />
-            <div className="flex justify-end">
-              <Button type="submit" disabled={!comment.trim()} size="sm">
-                {content.send}
-              </Button>
-            </div>
-          </form>
+          <p className="text-gray-700 whitespace-pre-wrap">{ticket.description}</p>
         </Card>
-      </main>
-    </div>
+
+        {/* Info Grid */}
+        <div className="grid md:grid-cols-2 gap-6">
+          {/* Location & Equipment */}
+          <Card className="p-6">
+            <h2 className="font-semibold text-lg mb-4 flex items-center gap-2">
+              <MapPin className="w-5 h-5" />
+              Vị Trí & Thiết Bị
+            </h2>
+            <div className="space-y-3">
+              <div>
+                <p className="text-sm text-gray-500">Phòng</p>
+                <p className="font-medium">{ticket.room?.roomName || 'N/A'}</p>
+              </div>
+              <div>
+                <p className="text-sm text-gray-500">Loại thiết bị</p>
+                <p className="font-medium">{ticket.facilityType?.facilityName || 'N/A'}</p>
+              </div>
+            </div>
+          </Card>
+
+          {/* People */}
+          <Card className="p-6">
+            <h2 className="font-semibold text-lg mb-4 flex items-center gap-2">
+              <User className="w-5 h-5" />
+              Người Liên Quan
+            </h2>
+            <div className="space-y-3">
+              <div>
+                <p className="text-sm text-gray-500">Người báo cáo</p>
+                <p className="font-medium">{ticket.reporter?.userName || 'N/A'}</p>
+                <p className="text-sm text-gray-600">{ticket.reporter?.email || ''}</p>
+              </div>
+              {ticket.resolver && (
+                <div>
+                  <p className="text-sm text-gray-500">Người xử lý</p>
+                  <p className="font-medium">{ticket.resolver.userName}</p>
+                  <p className="text-sm text-gray-600">{ticket.resolver.email}</p>
+                </div>
+              )}
+            </div>
+          </Card>
+
+          {/* Timeline */}
+          <Card className="p-6">
+            <h2 className="font-semibold text-lg mb-4 flex items-center gap-2">
+              <Clock className="w-5 h-5" />
+              Thời Gian
+            </h2>
+            <div className="space-y-3">
+              <div>
+                <p className="text-sm text-gray-500">Ngày tạo</p>
+                <p className="font-medium">{formatDate(ticket.createdAt)}</p>
+              </div>
+              {ticket.dueDate && (
+                <div>
+                  <p className="text-sm text-gray-500">Hạn xử lý</p>
+                  <p className="font-medium text-orange-600">{formatDate(ticket.dueDate)}</p>
+                </div>
+              )}
+              {ticket.assignedAt && (
+                <div>
+                  <p className="text-sm text-gray-500">Ngày phân công</p>
+                  <p className="font-medium">{formatDate(ticket.assignedAt)}</p>
+                </div>
+              )}
+              {ticket.closedAt && (
+                <div>
+                  <p className="text-sm text-gray-500">Ngày đóng</p>
+                  <p className="font-medium">{formatDate(ticket.closedAt)}</p>
+                </div>
+              )}
+            </div>
+          </Card>
+
+          {/* Issues */}
+          <Card className="p-6">
+            <h2 className="font-semibold text-lg mb-4 flex items-center gap-2">
+              <Wrench className="w-5 h-5" />
+              Các Vấn Đề ({ticket.issues?.length || 0})
+            </h2>
+            <div className="space-y-2">
+              {ticket.issues && ticket.issues.length > 0 ? (
+                ticket.issues.map((issue) => (
+                  <div key={issue.ticketIssueId} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                    <div className="flex items-center gap-2">
+                      {getIssueStatusIcon(issue.status)}
+                      <span className="font-medium">{issue.issueType?.issueName || 'N/A'}</span>
+                    </div>
+                    <span className="text-sm text-gray-600">
+                      {issue.issueType?.estimatedMinutes || 0} phút
+                    </span>
+                  </div>
+                ))
+              ) : (
+                <p className="text-sm text-gray-500">Chưa có thông tin vấn đề</p>
+              )}
+            </div>
+          </Card>
+        </div>
+
+        {/* History Timeline */}
+        {ticket.histories && ticket.histories.length > 0 && (
+          <Card className="p-6">
+            <h2 className="font-semibold text-lg mb-4">Lịch Sử Thay Đổi</h2>
+            <div className="space-y-4">
+              {ticket.histories.map((history, index) => (
+                <div key={history.ticketHistoryId}>
+                  <div className="flex gap-4">
+                    <div className="flex flex-col items-center">
+                      <div className="w-3 h-3 rounded-full bg-blue-600"></div>
+                      {index < ticket.histories.length - 1 && (
+                        <div className="w-0.5 h-full bg-gray-300 my-1"></div>
+                      )}
+                    </div>
+                    <div className="flex-1 pb-4">
+                      <div className="flex items-center justify-between mb-1">
+                        <p className="font-medium">{history.user?.userName || 'System'}</p>
+                        <p className="text-sm text-gray-500">{formatDate(history.changedAt)}</p>
+                      </div>
+                      <p className="text-sm text-gray-600">
+                        Đổi <span className="font-medium">{history.fieldType}</span>
+                        {history.oldValue && (
+                          <> từ <span className="text-red-600">{history.oldValue}</span></>
+                        )}
+                        {history.newValue && (
+                          <> thành <span className="text-green-600">{history.newValue}</span></>
+                        )}
+                      </p>
+                    </div>
+                  </div>
+                  {index < ticket.histories.length - 1 && <Separator />}
+                </div>
+              ))}
+            </div>
+          </Card>
+        )}
+      </div>
+    </DashboardLayout>
   )
 }
