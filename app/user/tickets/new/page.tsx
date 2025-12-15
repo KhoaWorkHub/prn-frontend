@@ -1,231 +1,301 @@
 "use client"
 
-import type React from "react"
-
 import { useState } from "react"
-import { Button } from "@/components/ui/button"
+import { useRouter } from "next/navigation"
+import { DashboardLayout } from "@/components/layout/dashboard-layout"
 import { Card } from "@/components/ui/card"
-import Link from "next/link"
-import { ChevronLeft, Send } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Textarea } from "@/components/ui/textarea"
+import { Alert, AlertDescription } from "@/components/ui/alert"
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
+import { TicketSeverity } from "@/types/ticket"
+import { ticketService } from "@/lib/api/ticket.service"
+import { toast } from "sonner"
+import { Loader2, AlertCircle, ArrowLeft, Plus, Trash2 } from "lucide-react"
 
-export default function NewTicketPage() {
-  const [language, setLanguage] = useState<"en" | "vi">("en")
-  const [formData, setFormData] = useState({
-    title: "",
-    description: "",
-    category: "wifi",
-    room: "",
-    priority: "medium",
-    phone: "",
-  })
+export default function CreateTicketPage() {
+  const router = useRouter()
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState("")
 
-  const t = {
-    en: {
-      title: "Create New Ticket",
-      back: "Back",
-      form: {
-        title: "Issue Title",
-        titlePlaceholder: "e.g., WiFi not working",
-        description: "Description",
-        descriptionPlaceholder: "Describe the issue in detail...",
-        category: "Category",
-        room: "Room / Location",
-        roomPlaceholder: "e.g., A301",
-        priority: "Priority",
-        phone: "Phone Number",
-        phonePlaceholder: "Your phone number",
-        submit: "Submit Ticket",
-        cancel: "Cancel",
-      },
-      categories: {
-        wifi: "WiFi Connectivity",
-        ac: "Air Conditioning",
-        projector: "Projector / Equipment",
-        furniture: "Furniture",
-        lighting: "Lighting",
-        other: "Other",
-      },
-      priorities: {
-        low: "Low",
-        medium: "Medium",
-        high: "High",
-      },
-    },
-    vi: {
-      title: "Tạo Ticket Mới",
-      back: "Quay lại",
-      form: {
-        title: "Tiêu đề vấn đề",
-        titlePlaceholder: "vd: WiFi không hoạt động",
-        description: "Mô tả chi tiết",
-        descriptionPlaceholder: "Mô tả vấn đề một cách chi tiết...",
-        category: "Loại vấn đề",
-        room: "Phòng / Vị trí",
-        roomPlaceholder: "vd: A301",
-        priority: "Mức độ ưu tiên",
-        phone: "Số điện thoại",
-        phonePlaceholder: "Số điện thoại của bạn",
-        submit: "Gửi Ticket",
-        cancel: "Hủy",
-      },
-      categories: {
-        wifi: "Kết nối WiFi",
-        ac: "Điều hòa không khí",
-        projector: "Máy chiếu / Thiết bị",
-        furniture: "Đồ dùng",
-        lighting: "Chiếu sáng",
-        other: "Khác",
-      },
-      priorities: {
-        low: "Thấp",
-        medium: "Trung bình",
-        high: "Cao",
-      },
-    },
+  // Form state
+  const [title, setTitle] = useState("")
+  const [description, setDescription] = useState("")
+  const [severity, setSeverity] = useState<TicketSeverity>(TicketSeverity.B)
+  const [roomId, setRoomId] = useState("")
+  const [facilityTypeId, setFacilityTypeId] = useState("")
+  const [issueTypeIds, setIssueTypeIds] = useState<string[]>([""])
+
+  const handleAddIssueType = () => {
+    setIssueTypeIds([...issueTypeIds, ""])
   }
 
-  const content = t[language]
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-    const { name, value } = e.target
-    setFormData((prev) => ({ ...prev, [name]: value }))
+  const handleRemoveIssueType = (index: number) => {
+    setIssueTypeIds(issueTypeIds.filter((_, i) => i !== index))
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleIssueTypeChange = (index: number, value: string) => {
+    const updated = [...issueTypeIds]
+    updated[index] = value
+    setIssueTypeIds(updated)
+  }
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    console.log("Ticket submitted:", formData)
-    // TODO: Send to API
-    alert("Ticket submitted successfully!")
+    setError("")
+
+    // Validation
+    if (!title.trim()) {
+      setError("Tiêu đề không được để trống")
+      return
+    }
+    if (!description.trim()) {
+      setError("Mô tả không được để trống")
+      return
+    }
+    if (!roomId.trim()) {
+      setError("Vui lòng nhập Room ID")
+      return
+    }
+    if (!facilityTypeId.trim()) {
+      setError("Vui lòng nhập Facility Type ID")
+      return
+    }
+    
+    const validIssueTypeIds = issueTypeIds.filter(id => id.trim())
+    if (validIssueTypeIds.length === 0) {
+      setError("Vui lòng nhập ít nhất 1 Issue Type ID")
+      return
+    }
+
+    setLoading(true)
+    
+    try {
+      await ticketService.createTicket({
+        title: title.trim(),
+        description: description.trim(),
+        severity,
+        roomId: roomId.trim(),
+        facilityTypeId: facilityTypeId.trim(),
+        issueTypeIds: validIssueTypeIds,
+      })
+      
+      toast.success("Tạo ticket thành công!", {
+        description: "Ticket của bạn đã được gửi và đang chờ xử lý."
+      })
+      
+      router.push("/user/dashboard")
+    } catch (err: any) {
+      const errorMsg = err.response?.data?.message || "Không thể tạo ticket. Vui lòng thử lại."
+      setError(errorMsg)
+      toast.error("Lỗi", { description: errorMsg })
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="border-b border-border sticky top-0 z-40 bg-background/95 backdrop-blur-sm">
-        <div className="max-w-2xl mx-auto px-4 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Link href="/user/dashboard" className="p-2 hover:bg-secondary rounded-lg transition-colors">
-              <ChevronLeft className="w-5 h-5" />
-            </Link>
-            <h1 className="font-bold text-lg">{content.title}</h1>
-          </div>
-          <button
-            onClick={() => setLanguage(language === "en" ? "vi" : "en")}
-            className="px-2 py-1 rounded text-xs bg-secondary hover:bg-secondary/80 transition-colors"
-          >
-            {language === "en" ? "VI" : "EN"}
-          </button>
-        </div>
-      </header>
+    <DashboardLayout allowedRoles={['Reporter']} title="Tạo Ticket Mới">
+      <div className="max-w-3xl mx-auto">
+        {/* Back button */}
+        <Button
+          variant="ghost"
+          className="mb-4"
+          onClick={() => router.back()}
+        >
+          <ArrowLeft className="w-4 h-4 mr-2" />
+          Quay lại
+        </Button>
 
-      {/* Form */}
-      <main className="max-w-2xl mx-auto px-4 py-8">
         <Card className="p-6">
+          <h1 className="text-2xl font-bold mb-6">Báo Cáo Sự Cố Cơ Sở Vật Chất</h1>
+
           <form onSubmit={handleSubmit} className="space-y-6">
+            {/* Error Alert */}
+            {error && (
+              <Alert variant="destructive">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>{error}</AlertDescription>
+              </Alert>
+            )}
+
             {/* Title */}
-            <div>
-              <label className="block text-sm font-medium mb-2">{content.form.title}</label>
-              <input
-                type="text"
-                name="title"
-                value={formData.title}
-                onChange={handleChange}
-                placeholder={content.form.titlePlaceholder}
+            <div className="space-y-2">
+              <Label htmlFor="title">
+                Tiêu đề <span className="text-red-500">*</span>
+              </Label>
+              <Input
+                id="title"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                placeholder="Ví dụ: Máy chiếu không hoạt động"
+                disabled={loading}
                 required
-                className="w-full px-4 py-2 rounded-lg border border-input bg-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
               />
             </div>
 
             {/* Description */}
-            <div>
-              <label className="block text-sm font-medium mb-2">{content.form.description}</label>
-              <textarea
-                name="description"
-                value={formData.description}
-                onChange={handleChange}
-                placeholder={content.form.descriptionPlaceholder}
-                required
+            <div className="space-y-2">
+              <Label htmlFor="description">
+                Mô tả chi tiết <span className="text-red-500">*</span>
+              </Label>
+              <Textarea
+                id="description"
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                placeholder="Mô tả chi tiết vấn đề bạn gặp phải..."
                 rows={5}
-                className="w-full px-4 py-2 rounded-lg border border-input bg-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 resize-none"
+                disabled={loading}
+                required
               />
+              <p className="text-sm text-gray-500">
+                Hãy mô tả cụ thể: khi nào xảy ra, triệu chứng, đã thử cách nào chưa, etc.
+              </p>
             </div>
 
-            {/* Category & Priority */}
-            <div className="grid sm:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium mb-2">{content.form.category}</label>
-                <select
-                  name="category"
-                  value={formData.category}
-                  onChange={handleChange}
-                  className="w-full px-4 py-2 rounded-lg border border-input bg-background focus:outline-none focus:ring-2 focus:ring-primary/50"
-                >
-                  {Object.entries(content.categories).map(([key, label]) => (
-                    <option key={key} value={key}>
-                      {label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium mb-2">{content.form.priority}</label>
-                <select
-                  name="priority"
-                  value={formData.priority}
-                  onChange={handleChange}
-                  className="w-full px-4 py-2 rounded-lg border border-input bg-background focus:outline-none focus:ring-2 focus:ring-primary/50"
-                >
-                  {Object.entries(content.priorities).map(([key, label]) => (
-                    <option key={key} value={key}>
-                      {label}
-                    </option>
-                  ))}
-                </select>
-              </div>
+            {/* Severity */}
+            <div className="space-y-3">
+              <Label>
+                Mức độ ưu tiên <span className="text-red-500">*</span>
+              </Label>
+              <RadioGroup
+                value={severity}
+                onValueChange={(value) => setSeverity(value as TicketSeverity)}
+                disabled={loading}
+              >
+                <div className="flex items-center space-x-2 border rounded-lg p-3 hover:bg-gray-50">
+                  <RadioGroupItem value={TicketSeverity.A} id="severity-a" />
+                  <Label htmlFor="severity-a" className="flex-1 cursor-pointer">
+                    <div className="font-semibold text-red-600">A - Cao nhất</div>
+                    <div className="text-sm text-gray-600">Khẩn cấp, ảnh hưởng nghiêm trọng</div>
+                  </Label>
+                </div>
+                <div className="flex items-center space-x-2 border rounded-lg p-3 hover:bg-gray-50">
+                  <RadioGroupItem value={TicketSeverity.B} id="severity-b" />
+                  <Label htmlFor="severity-b" className="flex-1 cursor-pointer">
+                    <div className="font-semibold text-orange-600">B - Trung bình</div>
+                    <div className="text-sm text-gray-600">Cần xử lý sớm</div>
+                  </Label>
+                </div>
+                <div className="flex items-center space-x-2 border rounded-lg p-3 hover:bg-gray-50">
+                  <RadioGroupItem value={TicketSeverity.C} id="severity-c" />
+                  <Label htmlFor="severity-c" className="flex-1 cursor-pointer">
+                    <div className="font-semibold text-blue-600">C - Thấp</div>
+                    <div className="text-sm text-gray-600">Không gấp</div>
+                  </Label>
+                </div>
+              </RadioGroup>
             </div>
 
-            {/* Room & Phone */}
-            <div className="grid sm:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium mb-2">{content.form.room}</label>
-                <input
-                  type="text"
-                  name="room"
-                  value={formData.room}
-                  onChange={handleChange}
-                  placeholder={content.form.roomPlaceholder}
-                  required
-                  className="w-full px-4 py-2 rounded-lg border border-input bg-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium mb-2">{content.form.phone}</label>
-                <input
-                  type="tel"
-                  name="phone"
-                  value={formData.phone}
-                  onChange={handleChange}
-                  placeholder={content.form.phonePlaceholder}
-                  className="w-full px-4 py-2 rounded-lg border border-input bg-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
-                />
-              </div>
+            {/* Room ID (temporary - will be dropdown when backend API ready) */}
+            <div className="space-y-2">
+              <Label htmlFor="roomId">
+                Room ID <span className="text-red-500">*</span>
+              </Label>
+              <Input
+                id="roomId"
+                value={roomId}
+                onChange={(e) => setRoomId(e.target.value)}
+                placeholder="Nhập GUID của phòng (tạm thời)"
+                disabled={loading}
+                required
+              />
+              <p className="text-xs text-amber-600">
+                ⚠️ Tạm thời nhập GUID. Sẽ có dropdown khi backend cung cấp API GET /api/rooms
+              </p>
             </div>
 
-            {/* Buttons */}
-            <div className="flex gap-3 justify-end pt-4 border-t border-border">
-              <Link href="/user/dashboard">
-                <Button variant="outline">{content.form.cancel}</Button>
-              </Link>
-              <Button type="submit" className="gap-2">
-                <Send className="w-4 h-4" />
-                {content.form.submit}
+            {/* Facility Type ID (temporary) */}
+            <div className="space-y-2">
+              <Label htmlFor="facilityTypeId">
+                Facility Type ID <span className="text-red-500">*</span>
+              </Label>
+              <Input
+                id="facilityTypeId"
+                value={facilityTypeId}
+                onChange={(e) => setFacilityTypeId(e.target.value)}
+                placeholder="Nhập GUID của loại thiết bị (tạm thời)"
+                disabled={loading}
+                required
+              />
+              <p className="text-xs text-amber-600">
+                ⚠️ Tạm thời nhập GUID. Sẽ có dropdown khi backend cung cấp API GET /api/facility-types
+              </p>
+            </div>
+
+            {/* Issue Type IDs (temporary) */}
+            <div className="space-y-2">
+              <Label>
+                Issue Type IDs <span className="text-red-500">*</span>
+              </Label>
+              {issueTypeIds.map((id, index) => (
+                <div key={index} className="flex gap-2">
+                  <Input
+                    value={id}
+                    onChange={(e) => handleIssueTypeChange(index, e.target.value)}
+                    placeholder="Nhập GUID của issue type"
+                    disabled={loading}
+                  />
+                  {issueTypeIds.length > 1 && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="icon"
+                      onClick={() => handleRemoveIssueType(index)}
+                      disabled={loading}
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  )}
+                </div>
+              ))}
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={handleAddIssueType}
+                disabled={loading}
+                className="w-full"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Thêm Issue Type
+              </Button>
+              <p className="text-xs text-amber-600">
+                ⚠️ Tạm thời nhập GUIDs. Sẽ có multi-select khi backend cung cấp API GET /api/issue-types
+              </p>
+            </div>
+
+            {/* Submit Button */}
+            <div className="flex gap-3 pt-4">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => router.back()}
+                disabled={loading}
+                className="flex-1"
+              >
+                Hủy
+              </Button>
+              <Button
+                type="submit"
+                disabled={loading}
+                className="flex-1"
+              >
+                {loading ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Đang gửi...
+                  </>
+                ) : (
+                  "Tạo Ticket"
+                )}
               </Button>
             </div>
           </form>
         </Card>
-      </main>
-    </div>
+      </div>
+    </DashboardLayout>
   )
 }
