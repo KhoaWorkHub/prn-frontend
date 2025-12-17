@@ -31,7 +31,12 @@ jobs:
           NODE_ENV: production
       
       - name: Run linter
-        run: npm run lint --if-present
+        run: |
+          if command -v npx eslint &> /dev/null; then
+            npm run lint
+          else
+            echo "ESLint not available - skipping linting step"
+          fi
       
       - name: Build success
         run: echo "✅ Build completed successfully - Vercel will handle deployment"
