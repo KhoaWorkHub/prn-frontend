@@ -1,13 +1,21 @@
 {
-  "buildCommand": "pnpm build",
-  "devCommand": "pnpm dev",
-  "installCommand": "pnpm install",
+  "buildCommand": "npm run build",
+  "devCommand": "npm run dev",
+  "installCommand": "npm install --legacy-peer-deps",
   "framework": "nextjs",
   "outputDirectory": ".next",
   "rewrites": [
     {
       "source": "/api/:path*",
       "destination": "http://34.169.143.69:8080/api/:path*"
+    },
+    {
+      "source": "/odata/:path*", 
+      "destination": "http://34.169.143.69:8080/odata/:path*"
+    },
+    {
+      "source": "/data/:path*",
+      "destination": "http://34.169.143.69:8080/data/:path*"
     }
   ]
 }
