@@ -39,7 +39,28 @@ export const ticketService = {
 
   // Create ticket (Reporter only)
   async createTicket(data: CreateTicketRequest): Promise<void> {
-    await apiClient.post(API_ENDPOINTS.TICKETS.CREATE, data);
+    console.log('🎫 Creating ticket with payload:', JSON.stringify(data, null, 2));
+    
+    try {
+      const response = await apiClient.post(API_ENDPOINTS.TICKETS.CREATE, data);
+      console.log('✅ Ticket created successfully:', response.status);
+      return response.data;
+    } catch (error: any) {
+      console.error('❌ Create ticket failed:');
+      console.error('Status:', error.response?.status);
+      console.error('Error Data:', error.response?.data);
+      console.error('Full Error:', error);
+      
+      if (error.response?.status === 401) {
+        throw new Error('You need to login first to create tickets');
+      } else if (error.response?.status === 400) {
+        throw new Error('Invalid ticket data: ' + (error.response?.data?.message || 'Please check all fields'));
+      } else if (error.response?.status === 500) {
+        throw new Error('Server error occurred. Please try again or contact support.');
+      }
+      
+      throw error;
+    }
   },
 
   // ===== STAFF-SPECIFIC ENDPOINTS =====

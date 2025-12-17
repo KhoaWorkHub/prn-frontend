@@ -24,7 +24,26 @@ export const metadataService = {
       );
       return response.data;
     } catch (error: any) {
-      console.warn('Main metadata endpoint failed, using fallback seed data...', error.message);
+      console.warn('Main metadata endpoint failed, trying individual endpoints...', error.message);
+      
+      // Try individual endpoints as fallback
+      try {
+        const [campuses, rooms, facilityTypes, issueTypes] = await Promise.all([
+          this.getCampuses().catch(() => []),
+          this.getRooms().catch(() => []),
+          this.getFacilityTypes().catch(() => []),
+          this.getIssueTypes().catch(() => []),
+        ]);
+        
+        if (campuses.length > 0 || rooms.length > 0 || facilityTypes.length > 0 || issueTypes.length > 0) {
+          console.info('Retrieved some data from individual endpoints');
+          return { campuses, rooms, facilityTypes, issueTypes };
+        }
+      } catch (individualError) {
+        console.warn('Individual endpoints also failed:', individualError);
+      }
+      
+      console.warn('All endpoints failed, using fallback seed data...');
       
       // Fallback: return seed data so users can still create tickets
       return {
