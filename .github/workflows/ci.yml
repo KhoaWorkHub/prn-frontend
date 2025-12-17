@@ -21,8 +21,11 @@ jobs:
       - name: Create .npmrc
         run: echo "legacy-peer-deps=true" > .npmrc
       
+      - name: Clear npm cache
+        run: npm cache clean --force
+      
       - name: Install dependencies
-        run: npm ci --legacy-peer-deps
+        run: npm install --legacy-peer-deps
       
       - name: Build project
         run: npm run build
