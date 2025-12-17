@@ -16,16 +16,14 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '18'
-          cache: 'npm'
       
       - name: Create .npmrc
         run: echo "legacy-peer-deps=true" > .npmrc
       
-      - name: Clear npm cache
-        run: npm cache clean --force
-      
       - name: Install dependencies
-        run: npm install --legacy-peer-deps
+        run: |
+          npm install --legacy-peer-deps
+          npm ls --depth=0
       
       - name: Build project
         run: npm run build
