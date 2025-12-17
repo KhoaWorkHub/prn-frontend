@@ -15,25 +15,46 @@ export const API_ENDPOINTS = {
     CURRENT_USER: '/api/auth/current-user',
     LOGOUT: '/api/auth/logout',
   },
-  // Tickets (will be implemented when backend API is ready)
+  
+  // Tickets - Main CRUD
   TICKETS: {
     LIST: '/api/tickets',
     CREATE: '/api/tickets',
     DETAIL: (id: string) => `/api/tickets/${id}`,
     UPDATE: (id: string) => `/api/tickets/${id}`,
     DELETE: (id: string) => `/api/tickets/${id}`,
-    ASSIGN: (id: string) => `/api/tickets/${id}/assign`,
-    PROGRESS: (id: string) => `/api/tickets/${id}/progress`,
-    APPROVE_WFP: (id: string) => `/api/tickets/${id}/approve-wfp`,
-    APPROVE_CLOSE: (id: string) => `/api/tickets/${id}/approve-close`,
   },
-  // Manager
-  MANAGER: {
-    REPORTED_TICKETS: '/api/manager/tickets/reported',
-    CLOSED_TICKETS: '/api/manager/tickets/closed',
-  },
-  // Staff
+
+  // Staff-specific ticket endpoints
   STAFF: {
-    ASSIGNED_TICKETS: '/api/staff/tickets',
+    ASSIGNED_TICKETS: '/api/staff-assigned-tickets',
+    ASSIGNED_TICKET_DETAIL: (id: string) => `/api/staff-assigned-tickets/${id}`,
+  },
+
+  // Reporter-specific ticket endpoints  
+  REPORTER: {
+    REPORTED_TICKETS: '/api/reporter-reported-tickets',
+    REPORTED_TICKET_DETAIL: (id: string) => `/api/reporter-reported-tickets/${id}`,
+  },
+
+  // Approval workflows
+  APPROVAL: {
+    ORDER_PART: '/api/order-part-approval',
+    REVIEW: '/api/review',
+    CLOSE_APPROVAL: '/api/close-approval',
+  },
+
+  // OData endpoints
+  ODATA: {
+    METADATA: '/odata/$metadata',
+    ROOT: '/odata',
+    TICKETS: '/odata/Tickets',
+    TICKETS_COUNT: '/odata/Tickets/$count',
+  },
+
+  // Metadata endpoints
+  DATA: {
+    METADATA: '/data/$metadata',
+    ROOT: '/data',
   },
 } as const;

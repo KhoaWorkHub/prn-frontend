@@ -39,6 +39,11 @@ export interface RoomResponse {
   campusId: string;
 }
 
+export interface CampusResponse {
+  campusId: string;
+  campusName: string;
+}
+
 export interface FacilityTypeResponse {
   facilityTypeId: string;
   facilityName: string;
@@ -123,6 +128,9 @@ export interface TicketParameters {
   reporterId?: string;
   pageNumber?: number;
   pageSize?: number;
+  searchTerm?: string;
+  sortBy?: string;
+  sortDirection?: 'asc' | 'desc';
 }
 
 // ===== PAGINATION =====
@@ -139,4 +147,61 @@ export interface PaginationMetadata {
 export interface PaginatedResponse<T> {
   data: T[];
   metadata: PaginationMetadata;
+}
+
+// ===== APPROVAL TYPES =====
+
+export enum ApprovalStatus {
+  PENDING = 'Pending',
+  APPROVED = 'Approved', 
+  REJECTED = 'Rejected',
+}
+
+export enum ApprovalType {
+  ORDER_PART = 'OrderPart',
+  CLOSE_TICKET = 'CloseTicket',
+}
+
+export interface OrderPartApprovalRequest {
+  ticketId: string;
+  requestedAmount: number;
+  reason?: string;
+}
+
+export interface ReviewTicketApprovalRequest {
+  approvalId: string;
+  approvalStatus: ApprovalStatus;
+  reason?: string;
+  userId: string;
+}
+
+export interface CloseTicketApprovalRequest {
+  ticketId: string;
+  reason: TicketCloseReason;
+}
+
+export interface TicketHistoryLogRequest {
+  ticketId: string;
+  fieldType: string;
+  oldValue?: string;
+  newValue?: string;
+  changedBy: string;
+}
+
+// ===== ODATA TYPES =====
+
+export interface ODataMetadata {
+  '@odata.context': string;
+  '@odata.metadataEtag'?: string;
+}
+
+export interface ODataResponse<T> {
+  '@odata.context': string;
+  '@odata.count'?: number;
+  value: T[];
+}
+
+export interface ODataCountResponse {
+  '@odata.context': string;
+  value: number;
 }
