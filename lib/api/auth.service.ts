@@ -49,6 +49,7 @@ export const authService = {
         headers: {
           Authorization: `Bearer ${getToken()}`,
         },
+        withCredentials: false, // No cookies for external API
       }
     );
     

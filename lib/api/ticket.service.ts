@@ -39,8 +39,15 @@ export const ticketService = {
 
   // Create ticket (Reporter only)
   async createTicket(data: CreateTicketRequest): Promise<void> {
-    await apiClient.post(API_ENDPOINTS.TICKETS.CREATE, data);
-    // Backend returns 201 with no body
+    console.log('Creating ticket with payload:', data);
+    
+    try {
+      const response = await apiClient.post(API_ENDPOINTS.TICKETS.CREATE, data);
+      console.log('Create ticket response:', response.status, response.data);
+    } catch (error: any) {
+      console.error('Create ticket error:', error.response?.data || error.message);
+      throw error;
+    }
   },
 
   // ===== STAFF-SPECIFIC ENDPOINTS =====

@@ -1,7 +1,9 @@
 // API Configuration
 export const API_CONFIG = {
-  // Use relative URLs for Vercel rewrites to proxy to backend
-  BASE_URL: typeof window === 'undefined' ? 'http://34.169.143.69:8080' : '',
+  // Use relative URLs for Vercel rewrites when deployed, absolute for local dev
+  BASE_URL: typeof window !== 'undefined' && window.location.hostname === 'localhost' 
+    ? 'http://34.169.143.69:8080' 
+    : '',
   TIMEOUT: 30000,
 } as const;
 

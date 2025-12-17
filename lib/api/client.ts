@@ -40,8 +40,9 @@ const apiClient: AxiosInstance = axios.create({
   timeout: API_CONFIG.TIMEOUT,
   headers: {
     'Content-Type': 'application/json',
+    'Accept': 'application/json',
   },
-  withCredentials: true, // IMPORTANT: Enable cookies for refreshToken
+  withCredentials: false, // Disable for external API
 });
 
 // Request interceptor - Add auth token
@@ -76,8 +77,9 @@ apiClient.interceptors.response.use(
           {
             headers: {
               Authorization: `Bearer ${getToken()}`,
+              'Content-Type': 'application/json',
             },
-            withCredentials: true, // Send cookies
+            withCredentials: false, // No cookies for external API
           }
         );
 
