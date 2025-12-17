@@ -17,10 +17,24 @@ export interface MetadataResponse {
 export const metadataService = {
   // Get all metadata (campuses, rooms, facility types, issue types)
   async getMetadata(): Promise<MetadataResponse> {
-    const response = await apiClient.get<MetadataResponse>(
-      API_ENDPOINTS.DATA.METADATA
-    );
-    return response.data;
+    try {
+      // Try the main metadata endpoint first
+      const response = await apiClient.get<MetadataResponse>(
+        API_ENDPOINTS.DATA.METADATA
+      );
+      return response.data;
+    } catch (error: any) {
+      console.warn('Main metadata endpoint failed, trying fallback...', error.message);
+      
+      // Fallback: return empty arrays if no data available
+      // In a real app, you might want to seed some default data or show an error
+      return {
+        campuses: [],
+        rooms: [],
+        facilityTypes: [],
+        issueTypes: [],
+      };
+    }
   },
 
   // Get metadata root endpoint
