@@ -50,6 +50,11 @@ export default function CreateTicketPage() {
         setRooms(metadata.rooms || [])
         setFacilityTypes(metadata.facilityTypes || [])
         setIssueTypes(metadata.issueTypes || [])
+        
+        // Check if using fallback data
+        if (metadata.campuses.length > 0 && metadata.campuses[0].campusId === "11111111-1111-1111-1111-111111111111") {
+          console.info("Using fallback seed data - backend metadata API not available")
+        }
       } catch (error) {
         console.error('Failed to load metadata:', error)
         setError("Không thể tải dữ liệu từ server")
