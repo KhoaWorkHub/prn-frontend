@@ -67,10 +67,12 @@ export const ticketService = {
 
   // Get staff's assigned tickets
   async getStaffAssignedTickets(params?: TicketParameters): Promise<TicketResponse[]> {
+    console.log('🔥 STAFF API CALL: Making request to', API_ENDPOINTS.STAFF.ASSIGNED_TICKETS);
     const response = await apiClient.get<TicketResponse[]>(
       API_ENDPOINTS.STAFF.ASSIGNED_TICKETS,
       { params }
     );
+    console.log('🔥 STAFF API RESPONSE:', response.data);
     return response.data;
   },
 
@@ -147,6 +149,111 @@ export const ticketService = {
     });
   },
 
+  // ===== WORKFLOW ACTIONS - Real Backend APIs =====
+  
+  // Start working on a ticket (Staff)
+  async startTicket(ticketId: string, notes?: string): Promise<void> {
+    await apiClient.post('/api/start-ticket', {
+      ticketId,
+      notes: notes || ''
+    });
+  },
+
+  // Complete ticket work (Staff)
+  async completeTicket(ticketId: string, completionNotes: string, resolution: string): Promise<void> {
+    await apiClient.post('/api/complete-ticket', {
+      ticketId,
+      completionNotes,
+      resolution
+    });
+  },
+
+  // Reassign ticket to another staff member (Manager/Admin)
+  async reassignTicket(ticketId: string, newUserId: string, reason: string): Promise<void> {
+    await apiClient.post('/api/reassign-ticket', {
+      ticketId,
+      newUserId,
+      reason
+    });
+  },
+
+  // Unassign ticket from current staff (Staff/Manager/Admin)
+  async unassignTicket(ticketId: string, reason: string): Promise<void> {
+    await apiClient.post('/api/unassign-ticket', {
+      ticketId,
+      reason
+    });
+  },
+
+  // Reopen a closed ticket (Manager/Admin)
+  async reopenTicket(ticketId: string, reason: string): Promise<void> {
+    await apiClient.post('/api/reopen-ticket', {
+      ticketId,
+      reason
+    });
+  },
+
+  // Cancel a ticket (Manager/Admin)
+  async cancelTicket(ticketId: string, reason: string): Promise<void> {
+    await apiClient.post('/api/cancel-ticket', {
+      ticketId,
+      reason
+    });
+  },
+
+  // Close a ticket (Manager/Admin)
+  async closeTicket(ticketId: string, closeReason: string, notes: string): Promise<void> {
+    await apiClient.post('/api/close-ticket', {
+      ticketId,
+      closeReason,
+      notes
+    });
+  },
+
+  // Assign ticket to staff member (Manager/Admin)
+  async assignTicket(ticketId: string, assignedToUserId: string, notes?: string): Promise<void> {
+    await apiClient.post('/api/assign-ticket', {
+      ticketId,
+      assignedToUserId,
+      notes: notes || '',
+      priority: 'Medium',
+      estimatedHours: 1
+    });
+  },
+
+  // ===== USER MANAGEMENT =====
+  
+  // Get available staff for assignment
+  async getAvailableStaff(): Promise<Array<{id: string, userName: string, email: string, role?: string}>> {
+    console.log('🔄 Getting available staff from seeded data (no Users API exists)...')
+    
+    // Backend doesn't have Users API, using seeded users from DbSeeder.cs migration
+    const seededStaff = [
+      { 
+        id: "e5d8947f-6794-42b6-ba67-201f366128b8", 
+        userName: "administrator", 
+        email: "administrator@gmail.com", 
+        role: "Administrator" 
+      },
+      { 
+        id: "9c24cbb9-0c15-4e4b-9c3b-0a3f3d111111", 
+        userName: "manager1", 
+        email: "manager1@gmail.com", 
+        role: "Manager" 
+      },
+      { 
+        id: "3fe77296-fdb3-4d71-8b99-ef8380c32037", 
+        userName: "staff1", 
+        email: "staff1@gmail.com", 
+        role: "Staff" 
+      }
+    ];
+    
+    // Return all users that can be assigned (Staff, Manager, Administrator)
+    console.log('✅ Got seeded staff:', seededStaff.length)
+    return seededStaff;
+  },
+
   // ===== ODATA ENDPOINTS =====
 
   // Get OData metadata
@@ -177,4 +284,12 @@ export const ticketService = {
     const response = await apiClient.get<number>(url);
     return response.data;
   },
+
+  // ===== NOTE: Advanced operations not available in backend =====
+  
+  // Bulk operations - NOT IMPLEMENTED in backend
+  // Export tickets - NOT IMPLEMENTED in backend  
+  // Statistics - NOT IMPLEMENTED in backend
+  
+  // The backend only provides the approval workflow for ticket management
 };

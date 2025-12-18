@@ -5,9 +5,16 @@ import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
-import { Search, Plus, Filter, Eye, Edit, Trash2, Clock, Loader2 } from "lucide-react"
+import { Checkbox } from "@/components/ui/checkbox"
+import { Search, Plus, Filter, Eye, Edit, Trash2, Clock, Loader2, UserCheck, Package, FileCheck, CheckCircle, Play, XCircle, RefreshCw, UserX } from "lucide-react"
 import { ticketService } from "@/lib/api/ticket.service"
+import { useAuth } from "@/lib/auth-context"
 import type { TicketResponse } from "@/types/ticket"
+// import { TicketAssignmentDialog } from "./ticket-assignment-dialog" // Uses assignTicket API which doesn't exist
+import { TicketApprovalDialog } from "./ticket-approval-dialog"
+// import { TicketEditDialog } from "./ticket-edit-dialog" // PUT /api/tickets/{id} disabled
+// import { TicketDeleteDialog } from "./ticket-delete-dialog" // DELETE /api/tickets/{id} disabled
+// import { BulkOperations } from "./bulk-operations" // Not available in backend
 
 interface TicketListProps {
   userRole: string
@@ -86,20 +93,40 @@ const slaColors: Record<string, string> = {
 }
 
 export function TicketList({ userRole }: TicketListProps) {
+  const { user } = useAuth()
   const [searchTerm, setSearchTerm] = useState("")
   const [filterStatus, setFilterStatus] = useState("All")
   const [tickets, setTickets] = useState<TicketResponse[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
+  const [selectedTickets, setSelectedTickets] = useState<string[]>([])
 
-  // Load tickets from backend
+  // NOTE: Direct workflow actions not available - backend uses approval workflow only
+
+  // Load tickets from backend based on user role
   useEffect(() => {
     const loadTickets = async () => {
+      if (!user) return
+      
       try {
         setLoading(true)
-        console.log('🔄 Loading tickets from backend...')
-        const ticketData = await ticketService.getTickets()
-        console.log('✅ Loaded tickets:', ticketData)
+        console.log('🔄 Loading tickets for roles:', user.roles)
+        
+        let ticketData: TicketResponse[]
+        
+        // Use role-specific APIs as shown in Swagger
+        if (user.roles.includes('Reporter')) {
+          ticketData = await ticketService.getReporterReportedTickets()
+          console.log('✅ Loaded reporter tickets:', ticketData)
+        } else if (user.roles.includes('Staff')) {
+          ticketData = await ticketService.getStaffAssignedTickets()
+          console.log('✅ Loaded staff assigned tickets:', ticketData)
+        } else {
+          // Admin/Manager can see all tickets
+          ticketData = await ticketService.getTickets()
+          console.log('✅ Loaded all tickets:', ticketData)
+        }
+        
         setTickets(ticketData || [])
       } catch (error: any) {
         console.error('❌ Failed to load tickets:', error)
@@ -142,7 +169,7 @@ export function TicketList({ userRole }: TicketListProps) {
     }
 
     loadTickets()
-  }, [])
+  }, [user])
 
   if (loading) {
     return (
@@ -196,6 +223,8 @@ export function TicketList({ userRole }: TicketListProps) {
         ))}
       </div>
 
+      {/* NOTE: Bulk operations not available in backend */}
+
       {/* Tickets Table */}
       <Card className="bg-card overflow-hidden">
         <div className="overflow-x-auto">
@@ -227,6 +256,18 @@ export function TicketList({ userRole }: TicketListProps) {
               ) : (
                 tickets.map((ticket) => (
                   <tr key={ticket.ticketId} className="border-b border-border hover:bg-secondary/50 transition-colors">
+                    <td className="px-4 py-4">
+                      <Checkbox
+                        checked={selectedTickets.includes(ticket.ticketId)}
+                        onCheckedChange={(checked) => {
+                          if (checked) {
+                            setSelectedTickets([...selectedTickets, ticket.ticketId])
+                          } else {
+                            setSelectedTickets(selectedTickets.filter(id => id !== ticket.ticketId))
+                          }
+                        }}
+                      />
+                    </td>
                     <td className="px-6 py-4 font-mono font-semibold text-primary">#{ticket.ticketId.slice(-4)}</td>
                     <td className="px-6 py-4 text-foreground max-w-xs">{ticket.title}</td>
                     <td className="px-6 py-4 text-muted-foreground">{ticket.room?.name || 'N/A'}</td>
@@ -244,16 +285,72 @@ export function TicketList({ userRole }: TicketListProps) {
                         <span className="font-semibold text-green-600">On Track</span>
                       </div>
                     </td>
-                    <td className="px-6 py-4 flex gap-2">
-                      <Button variant="ghost" size="icon" className="h-8 w-8">
-                        <Eye size={16} />
-                      </Button>
-                      <Button variant="ghost" size="icon" className="h-8 w-8">
-                        <Edit size={16} />
-                      </Button>
-                      <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive">
-                        <Trash2 size={16} />
-                      </Button>
+                    <td className="px-6 py-4">
+                      <div className="flex gap-2">
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          className="h-8 w-8" 
+                          title="View Details"
+                          onClick={() => window.location.href = `/tickets/${ticket.ticketId}`}
+                        >
+                          <Eye size={16} />
+                        </Button>
+                        {/* NOTE: Assignment APIs not available in backend - assignments done through disabled PUT endpoint */}
+                        {/* NOTE: Direct workflow actions removed - not available in backend */}
+                        
+                        {/* Staff approval actions */}
+                        {userRole === 'Staff' && ticket.status === 'Assigned' && (
+                          <>
+                            <TicketApprovalDialog 
+                              ticket={ticket}
+                              approvalType="order-part"
+                              onApprovalComplete={(ticketId, approved) => {
+                                console.log(`Part order ${approved ? 'approved' : 'rejected'} for ticket ${ticketId}`)
+                                loadTickets()
+                              }}
+                              trigger={
+                                <Button variant="ghost" size="icon" className="h-8 w-8 text-blue-600" title="Request Parts">
+                                  <Package size={16} />
+                                </Button>
+                              }
+                            />
+                            <TicketApprovalDialog 
+                              ticket={ticket}
+                              approvalType="close"
+                              onApprovalComplete={(ticketId, approved) => {
+                                console.log(`Close request submitted for ticket ${ticketId}`)
+                                loadTickets()
+                              }}
+                              trigger={
+                                <Button variant="ghost" size="icon" className="h-8 w-8 text-green-600" title="Request Close">
+                                  <CheckCircle size={16} />
+                                </Button>
+                              }
+                            />
+                          </>
+                        )}
+                        {/* Manager/Admin approval actions */}
+                        {(userRole === 'Admin' || userRole === 'Manager') && (
+                          <TicketApprovalDialog 
+                            ticket={ticket}
+                            approvalType="review"
+                            onApprovalComplete={(ticketId, approved) => {
+                              console.log(`Review ${approved ? 'approved' : 'rejected'} for ticket ${ticketId}`)
+                              loadTickets()
+                            }}
+                            trigger={
+                              <Button variant="ghost" size="icon" className="h-8 w-8 text-purple-600" title="Review Approval">
+                                <FileCheck size={16} />
+                              </Button>
+                            }
+                          />
+                        )}
+                        {/* NOTE: Edit and Delete APIs are commented out in backend 
+                            - PUT /api/tickets/{id} is disabled
+                            - DELETE /api/tickets/{id} is disabled
+                        */}
+                      </div>
                     </td>
                   </tr>
                 ))

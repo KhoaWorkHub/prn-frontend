@@ -2,12 +2,13 @@
 export { authService } from './auth.service';
 export { ticketService } from './ticket.service';
 export { metadataService } from './metadata.service';
-export { 
-  getSignalRService, 
-  cleanupSignalR, 
-  SignalRService,
-  type NotificationMessage 
-} from './signalr.service';
+// Temporarily commented out until @microsoft/signalr is installed
+// export { 
+//   getSignalRService, 
+//   cleanupSignalR, 
+//   SignalRService,
+//   type NotificationMessage 
+// } from './signalr.service';
 
 // Export API client and utilities
 export { default as apiClient, getToken, setToken, clearTokens } from './client';
@@ -62,5 +63,5 @@ export const apiServices = {
   auth: authService,
   ticket: ticketService,
   metadata: metadataService,
-  signalr: getSignalRService,
+  // signalr: getSignalRService, // Temporarily commented out
 } as const;

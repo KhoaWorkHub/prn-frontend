@@ -22,9 +22,9 @@ export default function UserDashboard() {
       if (!user) return
       
       try {
-        const data = await ticketService.getTickets({
-          reporterId: user.id, // Filter by current user
-        })
+        console.log('🔄 Loading reporter tickets for user:', user.id)
+        const data = await ticketService.getReporterReportedTickets()
+        console.log('✅ Reporter tickets loaded:', data)
         setTickets(data)
       } catch (error: any) {
         toast.error("Không thể tải danh sách ticket", {
@@ -154,11 +154,13 @@ export default function UserDashboard() {
                       </div>
                     )}
                     <div>
-                      <span className="font-medium">Phòng:</span> {ticket.room?.roomName || 'N/A'}
+                      <span className="font-medium">Phòng:</span> {ticket.room?.name || 'N/A'}
                     </div>
-                    <div>
-                      <span className="font-medium">Thiết bị:</span> {ticket.facilityType?.facilityName || 'N/A'}
-                    </div>
+                    {ticket.assignedToUser && (
+                      <div>
+                        <span className="font-medium">Được giao:</span> {ticket.assignedToUser.userName}
+                      </div>
+                    )}
                   </div>
                 </Card>
               </Link>

@@ -164,8 +164,10 @@ export enum ApprovalType {
 
 export interface OrderPartApprovalRequest {
   ticketId: string;
-  requestedAmount: number;
-  reason?: string;
+  partDescription: string;
+  estimatedCost: number;
+  vendor?: string;
+  urgency: 'Low' | 'Medium' | 'High' | 'Critical';
 }
 
 export interface ReviewTicketApprovalRequest {
@@ -177,7 +179,7 @@ export interface ReviewTicketApprovalRequest {
 
 export interface CloseTicketApprovalRequest {
   ticketId: string;
-  reason: TicketCloseReason;
+  reason: string;
 }
 
 export interface TicketHistoryLogRequest {

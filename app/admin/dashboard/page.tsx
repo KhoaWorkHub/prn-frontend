@@ -11,8 +11,9 @@ import { TicketList } from "@/components/tickets/ticket-list"
 import { CategoryManagement } from "@/components/management/category-management"
 import { RoomManagement } from "@/components/management/room-management"
 import { ReportDashboard } from "@/components/reports/report-dashboard"
+import { WorkflowScenario } from "@/components/demo/workflow-scenario"
 
-type PageView = "dashboard" | "tickets" | "categories" | "rooms" | "reports" | "escalations"
+type PageView = "dashboard" | "tickets" | "categories" | "rooms" | "reports" | "escalations" | "demo"
 
 export default function AdminDashboard() {
   const { user, loading } = useAuth()
@@ -65,6 +66,8 @@ export default function AdminDashboard() {
         return <RoomManagement />
       case "reports":
         return <ReportDashboard />
+      case "demo":
+        return <WorkflowScenario />
       default:
         return <Dashboard userRole={userRole} />
     }

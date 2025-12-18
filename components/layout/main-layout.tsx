@@ -29,6 +29,7 @@ export function MainLayout({ children, currentView, onViewChange, userRole, onRo
     { id: "categories", label: language === "en" ? "Categories" : "Danh mục", icon: "🏷️" },
     { id: "rooms", label: language === "en" ? "Rooms" : "Phòng/Bộ phận", icon: "🏢" },
     { id: "reports", label: language === "en" ? "Reports" : "Báo cáo", icon: "📈" },
+    { id: "demo", label: language === "en" ? "Demo Workflow" : "Demo Quy trình", icon: "🎬" },
   ]
 
   const renderIcon = (icon: string) => {

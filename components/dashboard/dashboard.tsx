@@ -27,32 +27,45 @@ const COLORS = ["#3b82f6", "#f97316", "#8b5cf6", "#ec4899"]
 
 export function Dashboard({ userRole }: DashboardProps) {
   const [tickets, setTickets] = useState<TicketResponse[]>([])
+  const [statistics, setStatistics] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
 
-  // Load tickets from backend
+  // Load tickets and statistics from backend
   useEffect(() => {
-    const loadTickets = async () => {
+    const loadDashboardData = async () => {
       try {
         setLoading(true)
-        console.log('🔄 Loading dashboard tickets...')
-        const ticketData = await ticketService.getTickets()
-        console.log('✅ Dashboard tickets loaded:', ticketData)
-        setTickets(ticketData || [])
+        console.log('🔄 Loading dashboard data...')
+        
+        // Load tickets only - statistics API doesn't exist in backend
+        const [ticketData] = await Promise.allSettled([
+          ticketService.getTickets()
+        ])
+        
+        if (ticketData.status === 'fulfilled') {
+          console.log('✅ Dashboard tickets loaded:', ticketData.value)
+          setTickets(ticketData.value || [])
+        } else {
+          console.error('❌ Failed to load tickets:', ticketData.reason)
+        }
+        
+        // Statistics API doesn't exist - using calculated stats from tickets
+        console.log('📊 Using calculated statistics from ticket data')
+        
       } catch (error: any) {
-        console.error('❌ Failed to load dashboard tickets:', error)
+        console.error('❌ Failed to load dashboard data:', error)
         setError('Failed to load dashboard data')
-        // Keep empty array for calculations
         setTickets([])
       } finally {
         setLoading(false)
       }
     }
 
-    loadTickets()
+    loadDashboardData()
   }, [])
 
-  // Calculate real statistics from tickets
+  // Calculate statistics from tickets (no statistics API available)
   const stats = {
     openTickets: tickets.filter(t => !['Closed', 'Resolved'].includes(t.status)).length,
     overdueTickets: tickets.filter(t => t.dueDate && new Date(t.dueDate) < new Date() && !['Closed', 'Resolved'].includes(t.status)).length,
@@ -118,7 +131,7 @@ export function Dashboard({ userRole }: DashboardProps) {
       {/* Error Alert */}
       {error && (
         <Card className="p-4 bg-destructive/10 border-destructive/20">
-          <p className="text-destructive text-sm">⚠️ {error}. Showing calculated stats from available data.</p>
+          <p className="text-destructive text-sm">⚠️ Failed to load dashboard data. Showing calculated stats from available data.</p>
         </Card>
       )}
 

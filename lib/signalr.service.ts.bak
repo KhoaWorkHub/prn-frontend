@@ -1,0 +1,206 @@
+import * as signalR from '@microsoft/signalr'
+import { toast } from 'sonner'
+
+class SignalRService {
+  private connection: signalR.HubConnection | null = null
+  private isConnected = false
+
+  async connect(userId?: string): Promise<void> {
+    if (this.isConnected) return
+
+    try {
+      this.connection = new signalR.HubConnectionBuilder()
+        .withUrl('http://34.169.143.69:8080/notificationHub', {
+          accessTokenFactory: () => {
+            return localStorage.getItem('access_token') || ''
+          }
+        })
+        .withAutomaticReconnect()
+        .build()
+
+      // Setup event handlers
+      this.setupEventHandlers()
+
+      await this.connection.start()
+      this.isConnected = true
+      
+      console.log('✅ SignalR Connected')
+      
+      // Join user group if userId provided
+      if (userId) {
+        await this.connection.invoke('JoinUserGroup', userId)
+      }
+    } catch (error) {
+      console.error('❌ SignalR Connection Error:', error)
+    }
+  }
+
+  private setupEventHandlers(): void {
+    if (!this.connection) return
+
+    // Ticket assigned notification
+    this.connection.on('TicketAssigned', (data: {
+      ticketId: string,
+      staffId: string,
+      staffName: string,
+      ticketTitle: string
+    }) => {
+      toast.success('Ticket Assigned', {
+        description: `Ticket "${data.ticketTitle}" assigned to ${data.staffName}`
+      })
+      
+      // Trigger page refresh or update
+      this.triggerTicketUpdate(data.ticketId)
+    })
+
+    // Approval request notification
+    this.connection.on('ApprovalRequested', (data: {
+      approvalId: string,
+      ticketId: string,
+      requestType: string,
+      requestedBy: string
+    }) => {
+      toast.info('Approval Required', {
+        description: `${data.requestedBy} requested ${data.requestType} approval`
+      })
+      
+      this.triggerTicketUpdate(data.ticketId)
+    })
+
+    // Approval decision notification
+    this.connection.on('ApprovalDecision', (data: {
+      approvalId: string,
+      ticketId: string,
+      decision: 'Approved' | 'Rejected',
+      approvedBy: string,
+      requestType: string
+    }) => {
+      const isApproved = data.decision === 'Approved'
+      
+      if (isApproved) {
+        toast.success('Request Approved', {
+          description: `Your ${data.requestType} request was approved by ${data.approvedBy}`
+        })
+      } else {
+        toast.error('Request Rejected', {
+          description: `Your ${data.requestType} request was rejected by ${data.approvedBy}`
+        })
+      }
+      
+      this.triggerTicketUpdate(data.ticketId)
+    })
+
+    // Ticket status changed
+    this.connection.on('TicketStatusChanged', (data: {
+      ticketId: string,
+      oldStatus: string,
+      newStatus: string,
+      changedBy: string
+    }) => {
+      toast.info('Ticket Updated', {
+        description: `Ticket status changed from ${data.oldStatus} to ${data.newStatus}`
+      })
+      
+      this.triggerTicketUpdate(data.ticketId)
+    })
+
+    // Generic notification
+    this.connection.on('NotificationReceived', (data: {
+      title: string,
+      message: string,
+      type: 'info' | 'success' | 'warning' | 'error'
+    }) => {
+      switch (data.type) {
+        case 'success':
+          toast.success(data.title, { description: data.message })
+          break
+        case 'error':
+          toast.error(data.title, { description: data.message })
+          break
+        case 'warning':
+          toast.warning(data.title, { description: data.message })
+          break
+        default:
+          toast.info(data.title, { description: data.message })
+      }
+    })
+
+    // Connection status
+    this.connection.onreconnecting(() => {
+      console.log('🔄 SignalR Reconnecting...')
+      toast.info('Reconnecting...', { description: 'Attempting to restore real-time connection' })
+    })
+
+    this.connection.onreconnected(() => {
+      console.log('✅ SignalR Reconnected')
+      toast.success('Connected', { description: 'Real-time connection restored' })
+    })
+
+    this.connection.onclose(() => {
+      console.log('❌ SignalR Disconnected')
+      this.isConnected = false
+    })
+  }
+
+  private triggerTicketUpdate(ticketId: string): void {
+    // Trigger custom event for components to listen to
+    window.dispatchEvent(new CustomEvent('ticketUpdated', { 
+      detail: { ticketId } 
+    }))
+  }
+
+  async disconnect(): Promise<void> {
+    if (this.connection && this.isConnected) {
+      await this.connection.stop()
+      this.isConnected = false
+      console.log('🔌 SignalR Disconnected')
+    }
+  }
+
+  // Send notification to specific user
+  async sendNotificationToUser(userId: string, notification: {
+    title: string,
+    message: string,
+    type: 'info' | 'success' | 'warning' | 'error'
+  }): Promise<void> {
+    if (this.connection && this.isConnected) {
+      try {
+        await this.connection.invoke('SendNotificationToUser', userId, notification)
+      } catch (error) {
+        console.error('Failed to send notification:', error)
+      }
+    }
+  }
+
+  // Join role-based group
+  async joinRoleGroup(role: string): Promise<void> {
+    if (this.connection && this.isConnected) {
+      try {
+        await this.connection.invoke('JoinRoleGroup', role)
+        console.log(`📡 Joined ${role} group`)
+      } catch (error) {
+        console.error('Failed to join role group:', error)
+      }
+    }
+  }
+
+  // Check if connected
+  get connected(): boolean {
+    return this.isConnected
+  }
+}
+
+// Export singleton instance
+export const signalRService = new SignalRService()
+
+// Custom hook for components
+export function useSignalR(userId?: string) {
+  const connect = () => signalRService.connect(userId)
+  const disconnect = () => signalRService.disconnect()
+  
+  return {
+    connect,
+    disconnect,
+    connected: signalRService.connected
+  }
+}

@@ -30,7 +30,7 @@ export function DashboardLayout({ children, allowedRoles, title }: DashboardLayo
       } else if (user.roles.includes('Staff')) {
         router.push('/staff/dashboard')
       } else if (user.roles.includes('Reporter')) {
-        router.push('/user/dashboard')
+        router.push('/reporter/dashboard')
       } else {
         router.push('/')
       }
