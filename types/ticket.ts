@@ -35,18 +35,18 @@ export enum IssueStatus {
 
 export interface RoomResponse {
   roomId: string;
-  roomName: string;
-  campusId: string;
+  name: string;
+  campus: CampusResponse;
 }
 
 export interface CampusResponse {
   campusId: string;
-  campusName: string;
+  name: string;
 }
 
 export interface FacilityTypeResponse {
   facilityTypeId: string;
-  facilityName: string;
+  name: string;
 }
 
 export interface UserResponse {
@@ -57,8 +57,8 @@ export interface UserResponse {
 
 export interface IssueTypeResponse {
   issueTypeId: string;
-  issueName: string;
-  estimatedMinutes: number;
+  name: string;
+  estimatedMinutes?: number;
 }
 
 export interface TicketIssueResponse {

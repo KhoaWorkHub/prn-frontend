@@ -67,11 +67,11 @@ export default function CreateTicketPage() {
   }, [])
 
   const filteredRooms = rooms.filter(room => 
-    selectedCampus ? room.campusId === selectedCampus : true
+    selectedCampus ? room.campus.campusId === selectedCampus : true
   )
 
   const filteredIssueTypes = issueTypes.filter(issue => 
-    facilityTypeId ? issue.facilityTypeId === facilityTypeId : true
+    facilityTypeId ? true : true  // All issue types available regardless of facility type for now
   )
 
   const handleAddIssueType = () => {
@@ -268,7 +268,7 @@ export default function CreateTicketPage() {
                 <SelectContent>
                   {campuses.map((campus) => (
                     <SelectItem key={campus.campusId} value={campus.campusId}>
-                      {campus.campusName}
+                      {campus.name}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -287,7 +287,7 @@ export default function CreateTicketPage() {
                 <SelectContent>
                   {filteredRooms.map((room) => (
                     <SelectItem key={room.roomId} value={room.roomId}>
-                      {room.roomName}
+                      {room.name}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -309,7 +309,7 @@ export default function CreateTicketPage() {
                 <SelectContent>
                   {facilityTypes.map((facilityType) => (
                     <SelectItem key={facilityType.facilityTypeId} value={facilityType.facilityTypeId}>
-                      {facilityType.facilityName}
+                      {facilityType.name}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -334,7 +334,7 @@ export default function CreateTicketPage() {
                     <SelectContent>
                       {filteredIssueTypes.map((issueType) => (
                         <SelectItem key={issueType.issueTypeId} value={issueType.issueTypeId}>
-                          {issueType.issueName}
+                          {issueType.name}
                         </SelectItem>
                       ))}
                     </SelectContent>
