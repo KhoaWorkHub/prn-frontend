@@ -1,9 +1,7 @@
 // API Configuration
 export const API_CONFIG = {
-  // Use relative URLs for Vercel rewrites when deployed, absolute for local dev
-  BASE_URL: typeof window !== 'undefined' && window.location.hostname === 'localhost' 
-    ? 'http://34.169.143.69:8080' 
-    : '',
+  // Always use backend API directly for now (both local and deployed)
+  BASE_URL: 'http://34.169.143.69:8080',
   TIMEOUT: 30000,
 } as const;
 
@@ -56,7 +54,7 @@ export const API_ENDPOINTS = {
 
   // Metadata endpoints
   DATA: {
-    METADATA: '/data/$metadata',
-    ROOT: '/data',
+    METADATA: '/api/data/$metadata',
+    ROOT: '/api/data',
   },
 } as const;

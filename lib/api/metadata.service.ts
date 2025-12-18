@@ -19,31 +19,46 @@ export const metadataService = {
   async getMetadata(): Promise<MetadataResponse> {
     try {
       // Try the main metadata endpoint first
+      console.log('🔄 Fetching metadata from:', API_ENDPOINTS.DATA.METADATA);
       const response = await apiClient.get<MetadataResponse>(
         API_ENDPOINTS.DATA.METADATA
       );
+      console.log('✅ Metadata received from backend:', response.data);
       return response.data;
     } catch (error: any) {
-      console.warn('Main metadata endpoint failed, trying individual endpoints...', error.message);
+      console.error('❌ Main metadata endpoint failed:', error.response?.status, error.message);
       
       // Try individual endpoints as fallback
       try {
+        console.log('🔄 Trying individual endpoints...');
         const [campuses, rooms, facilityTypes, issueTypes] = await Promise.all([
-          this.getCampuses().catch(() => []),
-          this.getRooms().catch(() => []),
-          this.getFacilityTypes().catch(() => []),
-          this.getIssueTypes().catch(() => []),
+          this.getCampuses().catch((e) => {
+            console.warn('Campuses API failed:', e.message);
+            return [];
+          }),
+          this.getRooms().catch((e) => {
+            console.warn('Rooms API failed:', e.message);
+            return [];
+          }),
+          this.getFacilityTypes().catch((e) => {
+            console.warn('FacilityTypes API failed:', e.message);
+            return [];
+          }),
+          this.getIssueTypes().catch((e) => {
+            console.warn('IssueTypes API failed:', e.message);
+            return [];
+          }),
         ]);
         
         if (campuses.length > 0 || rooms.length > 0 || facilityTypes.length > 0 || issueTypes.length > 0) {
-          console.info('Retrieved some data from individual endpoints');
+          console.info('✅ Retrieved some data from individual endpoints');
           return { campuses, rooms, facilityTypes, issueTypes };
         }
       } catch (individualError) {
-        console.warn('Individual endpoints also failed:', individualError);
+        console.error('❌ Individual endpoints also failed:', individualError);
       }
       
-      console.warn('All endpoints failed, using fallback seed data...');
+      console.warn('⚠️ All endpoints failed, using fallback seed data...');
       
       // Fallback: return seed data so users can still create tickets
       return {
