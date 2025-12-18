@@ -1,11 +1,13 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
-import { Search, Plus, Filter, Eye, Edit, Trash2, Clock } from "lucide-react"
+import { Search, Plus, Filter, Eye, Edit, Trash2, Clock, Loader2 } from "lucide-react"
+import { ticketService } from "@/lib/api/ticket.service"
+import type { TicketResponse } from "@/types/ticket"
 
 interface TicketListProps {
   userRole: string
@@ -86,9 +88,82 @@ const slaColors: Record<string, string> = {
 export function TicketList({ userRole }: TicketListProps) {
   const [searchTerm, setSearchTerm] = useState("")
   const [filterStatus, setFilterStatus] = useState("All")
+  const [tickets, setTickets] = useState<TicketResponse[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState("")
+
+  // Load tickets from backend
+  useEffect(() => {
+    const loadTickets = async () => {
+      try {
+        setLoading(true)
+        console.log('🔄 Loading tickets from backend...')
+        const ticketData = await ticketService.getTickets()
+        console.log('✅ Loaded tickets:', ticketData)
+        setTickets(ticketData || [])
+      } catch (error: any) {
+        console.error('❌ Failed to load tickets:', error)
+        
+        if (error.response?.status === 401) {
+          setError('Authentication required - please login to view tickets')
+          setTickets([]) // Don't show mock data for auth errors
+        } else if (error.response?.status === 403) {
+          setError('Access denied - insufficient permissions')
+          setTickets([]) 
+        } else {
+          setError('Failed to load tickets from server')
+          // Fallback to mock data if API fails (but not for auth errors)
+          setTickets(mockTickets.map(ticket => ({
+            ticketId: ticket.id,
+            title: ticket.title,
+            description: ticket.title,
+            status: ticket.status as any,
+            severity: ticket.priority as any,
+            createdAt: new Date().toISOString(),
+            room: { roomId: '1', name: ticket.room, campus: { campusId: '1', name: 'Campus' } },
+            createdBy: { id: '1', userName: ticket.reporter, email: 'test@test.com' },
+            closeReason: null,
+            assignedAt: null,
+            resolvedAt: null,
+            dueDate: null,
+            closedAt: null,
+            roomId: '1',
+            facilityTypeId: '1',
+            assignedToUserId: null,
+            createdByUserId: '1',
+            assignedToUser: null,
+            ticketIssues: [],
+            ticketHistories: []
+          } as TicketResponse)))
+        }
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    loadTickets()
+  }, [])
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <div className="text-center">
+          <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto mb-2" />
+          <p className="text-muted-foreground">Loading tickets...</p>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="space-y-4">
+      {/* Error Alert */}
+      {error && (
+        <Card className="p-4 bg-destructive/10 border-destructive/20">
+          <p className="text-destructive text-sm">⚠️ {error}. Showing fallback data.</p>
+        </Card>
+      )}
+      
       {/* Header with Search */}
       <div className="flex items-center justify-between gap-4">
         <div className="flex-1 relative">
@@ -139,38 +214,50 @@ export function TicketList({ userRole }: TicketListProps) {
               </tr>
             </thead>
             <tbody>
-              {mockTickets.map((ticket) => (
-                <tr key={ticket.id} className="border-b border-border hover:bg-secondary/50 transition-colors">
-                  <td className="px-6 py-4 font-mono font-semibold text-primary">{ticket.id}</td>
-                  <td className="px-6 py-4 text-foreground max-w-xs">{ticket.title}</td>
-                  <td className="px-6 py-4 text-muted-foreground">{ticket.room}</td>
-                  <td className="px-6 py-4 text-muted-foreground">{ticket.reporter}</td>
-                  <td className="px-6 py-4">
-                    <Badge className={statusColors[ticket.status]}>{ticket.status}</Badge>
-                  </td>
-                  <td className="px-6 py-4">
-                    <span className={`font-semibold ${priorityColors[ticket.priority]}`}>{ticket.priority}</span>
-                  </td>
-                  <td className="px-6 py-4 text-muted-foreground text-xs">{ticket.assigned}</td>
-                  <td className="px-6 py-4">
-                    <div className="flex items-center gap-1">
-                      <Clock size={14} className={slaColors[ticket.sla]} />
-                      <span className={`font-semibold ${slaColors[ticket.sla]}`}>{ticket.sla}</span>
+              {tickets.length === 0 ? (
+                <tr>
+                  <td colSpan={9} className="px-6 py-12 text-center text-muted-foreground">
+                    <div className="flex flex-col items-center gap-2">
+                      <Search size={48} className="opacity-50" />
+                      <p className="text-lg">No tickets found</p>
+                      <p className="text-sm">Create your first ticket to get started</p>
                     </div>
                   </td>
-                  <td className="px-6 py-4 flex gap-2">
-                    <Button variant="ghost" size="icon" className="h-8 w-8">
-                      <Eye size={16} />
-                    </Button>
-                    <Button variant="ghost" size="icon" className="h-8 w-8">
-                      <Edit size={16} />
-                    </Button>
-                    <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive">
-                      <Trash2 size={16} />
-                    </Button>
-                  </td>
                 </tr>
-              ))}
+              ) : (
+                tickets.map((ticket) => (
+                  <tr key={ticket.ticketId} className="border-b border-border hover:bg-secondary/50 transition-colors">
+                    <td className="px-6 py-4 font-mono font-semibold text-primary">#{ticket.ticketId.slice(-4)}</td>
+                    <td className="px-6 py-4 text-foreground max-w-xs">{ticket.title}</td>
+                    <td className="px-6 py-4 text-muted-foreground">{ticket.room?.name || 'N/A'}</td>
+                    <td className="px-6 py-4 text-muted-foreground">{ticket.createdBy?.userName || 'Unknown'}</td>
+                    <td className="px-6 py-4">
+                      <Badge className={statusColors[ticket.status] || statusColors.New}>{ticket.status}</Badge>
+                    </td>
+                    <td className="px-6 py-4">
+                      <span className={`font-semibold ${priorityColors[ticket.severity] || priorityColors.Medium}`}>{ticket.severity}</span>
+                    </td>
+                    <td className="px-6 py-4 text-muted-foreground text-xs">{ticket.assignedToUser?.userName || 'Unassigned'}</td>
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-1">
+                        <Clock size={14} className="text-green-600" />
+                        <span className="font-semibold text-green-600">On Track</span>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 flex gap-2">
+                      <Button variant="ghost" size="icon" className="h-8 w-8">
+                        <Eye size={16} />
+                      </Button>
+                      <Button variant="ghost" size="icon" className="h-8 w-8">
+                        <Edit size={16} />
+                      </Button>
+                      <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive">
+                        <Trash2 size={16} />
+                      </Button>
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>
