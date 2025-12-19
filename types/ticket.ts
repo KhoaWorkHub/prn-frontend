@@ -173,8 +173,8 @@ export interface OrderPartApprovalRequest {
 export interface ReviewTicketApprovalRequest {
   approvalId: string;
   approvalStatus: ApprovalStatus;
-  reason?: string;
   userId: string;
+  // Note: reason field not supported by backend model
 }
 
 export interface CloseTicketApprovalRequest {

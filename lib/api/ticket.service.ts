@@ -121,9 +121,7 @@ export const ticketService = {
     formData.append('approvalId', request.approvalId);
     formData.append('approvalStatus', request.approvalStatus);
     formData.append('userId', request.userId);
-    if (request.reason) {
-      formData.append('reason', request.reason);
-    }
+    // Note: backend model doesn't support reason field
 
     await apiClient.post(API_ENDPOINTS.APPROVAL.REVIEW, formData, {
       headers: {

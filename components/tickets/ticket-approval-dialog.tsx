@@ -155,8 +155,8 @@ export function TicketApprovalDialog({
           const reviewPayload = {
             approvalId,
             approvalStatus,
-            userId,
-            reason: reviewReason
+            userId
+            // Note: reason field removed as backend doesn't support it
           }
           
           console.log('📤 Sending review payload:', reviewPayload)
@@ -406,16 +406,7 @@ export function TicketApprovalDialog({
                 </Select>
               </div>
               
-              <div className="space-y-2">
-                <Label htmlFor="review-reason">Reason (Optional)</Label>
-                <Textarea
-                  id="review-reason"
-                  placeholder={`Provide reason for ${approvalStatus.toLowerCase()}ing this request...`}
-                  value={reviewReason}
-                  onChange={(e) => setReviewReason(e.target.value)}
-                  rows={3}
-                />
-              </div>
+              {/* Reason field removed - backend doesn't support it */}
             </div>
           )}
 
