@@ -1,7 +1,9 @@
 // API Configuration
 export const API_CONFIG = {
-  // Always use backend API directly for now (both local and deployed)
-  BASE_URL: 'http://34.169.143.69:8080',
+  // Use relative URLs in production (Vercel proxy), direct in development
+  BASE_URL: typeof window !== 'undefined' && window.location.hostname === 'localhost' 
+    ? 'http://34.169.143.69:8080' 
+    : '', // Empty for production - use relative URLs with Vercel proxy
   TIMEOUT: 30000,
 } as const;
 
