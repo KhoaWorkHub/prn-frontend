@@ -12,11 +12,12 @@ import { CheckCircle, XCircle, Clock, Package, FileCheck, AlertCircle } from "lu
 import { toast } from "sonner"
 import { ticketService } from "@/lib/api/ticket.service"
 import type { TicketResponse } from "@/types/ticket"
+import { useAuth } from "@/lib/auth-context"
 
 interface TicketApprovalDialogProps {
   ticket: TicketResponse
-  approvalType: 'order-part' | 'review' | 'close'
-  onApprovalComplete?: (ticketId: string, approved: boolean) => void
+  approvalType: 'order-part' | 'review' | 'close' | 'start' | 'complete' | 'unassign' | 'reopen' | 'cancel'
+  onApprovalComplete?: (ticketId: string, approved?: boolean) => void
   trigger?: React.ReactNode
 }
 
@@ -28,6 +29,7 @@ export function TicketApprovalDialog({
 }: TicketApprovalDialogProps) {
   const [open, setOpen] = useState(false)
   const [isProcessing, setIsProcessing] = useState(false)
+  const { user } = useAuth()
   
   // Order Part Approval States
   const [partDescription, setPartDescription] = useState("")
@@ -43,6 +45,14 @@ export function TicketApprovalDialog({
   // Close Approval States
   const [closeReason, setCloseReason] = useState("")
   const [resolution, setResolution] = useState("")
+  
+  // Workflow States
+  const [startNotes, setStartNotes] = useState("")
+  const [completionNotes, setCompletionNotes] = useState("")
+  const [completionResolution, setCompletionResolution] = useState("")
+  const [unassignReason, setUnassignReason] = useState("")
+  const [reopenReason, setReopenReason] = useState("")
+  const [cancelReason, setCancelReason] = useState("")
 
   const getApprovalConfig = () => {
     switch (approvalType) {
@@ -67,6 +77,41 @@ export function TicketApprovalDialog({
           description: 'Request approval to close this ticket',
           color: 'text-green-600'
         }
+      case 'start':
+        return {
+          title: 'Start Work on Ticket',
+          icon: <Clock className="w-5 h-5" />,
+          description: 'Begin working on this assigned ticket',
+          color: 'text-blue-600'
+        }
+      case 'complete':
+        return {
+          title: 'Complete Ticket Work',
+          icon: <CheckCircle className="w-5 h-5" />,
+          description: 'Mark this ticket as completed',
+          color: 'text-green-600'
+        }
+      case 'unassign':
+        return {
+          title: 'Unassign from Ticket',
+          icon: <XCircle className="w-5 h-5" />,
+          description: 'Remove assignment from this ticket',
+          color: 'text-orange-600'
+        }
+      case 'reopen':
+        return {
+          title: 'Reopen Closed Ticket',
+          icon: <AlertCircle className="w-5 h-5" />,
+          description: 'Reopen this closed ticket',
+          color: 'text-yellow-600'
+        }
+      case 'cancel':
+        return {
+          title: 'Cancel Ticket',
+          icon: <XCircle className="w-5 h-5" />,
+          description: 'Cancel this ticket permanently',
+          color: 'text-red-600'
+        }
     }
   }
 
@@ -75,9 +120,16 @@ export function TicketApprovalDialog({
   const handleApproval = async () => {
     setIsProcessing(true)
     
+    console.log('🚀 handleApproval called with type:', approvalType)
+    
     try {
-      const staffId = "current-user-id" // TODO: Get from auth context
-      const userId = "current-user-id" // TODO: Get from auth context
+      if (!user) {
+        toast.error("User not authenticated")
+        return
+      }
+      
+      const staffId = user.id
+      const userId = user.id
 
       switch (approvalType) {
         case 'order-part':
@@ -100,12 +152,16 @@ export function TicketApprovalDialog({
             return
           }
           
-          await ticketService.reviewTicketApproval({
+          const reviewPayload = {
             approvalId,
             approvalStatus,
             userId,
             reason: reviewReason
-          })
+          }
+          
+          console.log('📤 Sending review payload:', reviewPayload)
+          
+          await ticketService.reviewTicketApproval(reviewPayload)
           
           toast.success(`Ticket ${approvalStatus.toLowerCase()}`, {
             description: `The ticket has been ${approvalStatus.toLowerCase()}`
@@ -120,6 +176,62 @@ export function TicketApprovalDialog({
           
           toast.success("Close approval requested", {
             description: "Manager will review your close request"
+          })
+          break
+
+        case 'start':
+          await ticketService.startTicket({
+            ticketId: ticket.ticketId,
+            notes: startNotes
+          })
+          
+          toast.success("Ticket started", {
+            description: "You are now working on this ticket"
+          })
+          break
+
+        case 'complete':
+          await ticketService.completeTicket({
+            ticketId: ticket.ticketId,
+            completionNotes,
+            resolution: completionResolution
+          })
+          
+          toast.success("Ticket completed", {
+            description: "Ticket has been marked as completed"
+          })
+          break
+
+        case 'unassign':
+          await ticketService.unassignTicket({
+            ticketId: ticket.ticketId,
+            reason: unassignReason
+          })
+          
+          toast.success("Ticket unassigned", {
+            description: "You have been unassigned from this ticket"
+          })
+          break
+
+        case 'reopen':
+          await ticketService.reopenTicket({
+            ticketId: ticket.ticketId,
+            reason: reopenReason
+          })
+          
+          toast.success("Ticket reopened", {
+            description: "The ticket has been reopened"
+          })
+          break
+
+        case 'cancel':
+          await ticketService.cancelTicket({
+            ticketId: ticket.ticketId,
+            reason: cancelReason
+          })
+          
+          toast.success("Ticket cancelled", {
+            description: "The ticket has been cancelled"
           })
           break
       }
@@ -150,6 +262,12 @@ export function TicketApprovalDialog({
     setReviewReason("")
     setCloseReason("")
     setResolution("")
+    setStartNotes("")
+    setCompletionNotes("")
+    setCompletionResolution("")
+    setUnassignReason("")
+    setReopenReason("")
+    setCancelReason("")
   }
 
   const defaultTrigger = (
@@ -247,11 +365,22 @@ export function TicketApprovalDialog({
                 <Label htmlFor="approval-id">Approval ID *</Label>
                 <Input
                   id="approval-id"
-                  placeholder="Enter the approval request ID"
+                  placeholder="Auto-generated GUID"
                   value={approvalId}
                   onChange={(e) => setApprovalId(e.target.value)}
                   required
                 />
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => {
+                    const guid = crypto.randomUUID()
+                    setApprovalId(guid)
+                  }}
+                >
+                  Generate GUID
+                </Button>
               </div>
               
               <div className="space-y-2">
@@ -317,6 +446,97 @@ export function TicketApprovalDialog({
             </div>
           )}
 
+          {approvalType === 'start' && (
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="start-notes">Work Notes (Optional)</Label>
+                <Textarea
+                  id="start-notes"
+                  placeholder="Add any notes about starting this work..."
+                  value={startNotes}
+                  onChange={(e) => setStartNotes(e.target.value)}
+                  rows={3}
+                />
+              </div>
+            </div>
+          )}
+
+          {approvalType === 'complete' && (
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="completion-notes">Completion Notes *</Label>
+                <Textarea
+                  id="completion-notes"
+                  placeholder="Describe what work was completed..."
+                  value={completionNotes}
+                  onChange={(e) => setCompletionNotes(e.target.value)}
+                  rows={3}
+                  required
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="completion-resolution">Resolution *</Label>
+                <Textarea
+                  id="completion-resolution"
+                  placeholder="How was the issue resolved?"
+                  value={completionResolution}
+                  onChange={(e) => setCompletionResolution(e.target.value)}
+                  rows={2}
+                  required
+                />
+              </div>
+            </div>
+          )}
+
+          {approvalType === 'unassign' && (
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="unassign-reason">Unassign Reason *</Label>
+                <Textarea
+                  id="unassign-reason"
+                  placeholder="Why are you unassigning from this ticket?"
+                  value={unassignReason}
+                  onChange={(e) => setUnassignReason(e.target.value)}
+                  rows={3}
+                  required
+                />
+              </div>
+            </div>
+          )}
+
+          {approvalType === 'reopen' && (
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="reopen-reason">Reopen Reason *</Label>
+                <Textarea
+                  id="reopen-reason"
+                  placeholder="Why should this closed ticket be reopened?"
+                  value={reopenReason}
+                  onChange={(e) => setReopenReason(e.target.value)}
+                  rows={3}
+                  required
+                />
+              </div>
+            </div>
+          )}
+
+          {approvalType === 'cancel' && (
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="cancel-reason">Cancel Reason *</Label>
+                <Textarea
+                  id="cancel-reason"
+                  placeholder="Why should this ticket be cancelled?"
+                  value={cancelReason}
+                  onChange={(e) => setCancelReason(e.target.value)}
+                  rows={3}
+                  required
+                />
+              </div>
+            </div>
+          )}
+
           {/* Action Buttons */}
           <div className="flex justify-end gap-3 pt-4">
             <Button variant="outline" onClick={() => setOpen(false)} disabled={isProcessing}>
@@ -324,7 +544,15 @@ export function TicketApprovalDialog({
             </Button>
             <Button 
               onClick={handleApproval} 
-              disabled={isProcessing || (approvalType === 'order-part' && !partDescription) || (approvalType === 'review' && !approvalId) || (approvalType === 'close' && !closeReason)}
+              disabled={isProcessing || 
+                (approvalType === 'order-part' && !partDescription) || 
+                (approvalType === 'review' && !approvalId) || 
+                (approvalType === 'close' && !closeReason) ||
+                (approvalType === 'complete' && (!completionNotes || !completionResolution)) ||
+                (approvalType === 'unassign' && !unassignReason) ||
+                (approvalType === 'reopen' && !reopenReason) ||
+                (approvalType === 'cancel' && !cancelReason)
+              }
               className={`gap-2 ${config.color}`}
             >
               {isProcessing ? (

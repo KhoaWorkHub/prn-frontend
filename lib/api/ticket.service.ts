@@ -152,19 +152,19 @@ export const ticketService = {
   // ===== WORKFLOW ACTIONS - Real Backend APIs =====
   
   // Start working on a ticket (Staff)
-  async startTicket(ticketId: string, notes?: string): Promise<void> {
+  async startTicket(data: { ticketId: string, notes?: string }): Promise<void> {
     await apiClient.post('/api/start-ticket', {
-      ticketId,
-      notes: notes || ''
+      ticketId: data.ticketId,
+      notes: data.notes || ''
     });
   },
 
   // Complete ticket work (Staff)
-  async completeTicket(ticketId: string, completionNotes: string, resolution: string): Promise<void> {
+  async completeTicket(data: { ticketId: string, completionNotes: string, resolution: string }): Promise<void> {
     await apiClient.post('/api/complete-ticket', {
-      ticketId,
-      completionNotes,
-      resolution
+      ticketId: data.ticketId,
+      completionNotes: data.completionNotes,
+      resolution: data.resolution
     });
   },
 
@@ -178,26 +178,26 @@ export const ticketService = {
   },
 
   // Unassign ticket from current staff (Staff/Manager/Admin)
-  async unassignTicket(ticketId: string, reason: string): Promise<void> {
+  async unassignTicket(data: { ticketId: string, reason: string }): Promise<void> {
     await apiClient.post('/api/unassign-ticket', {
-      ticketId,
-      reason
+      ticketId: data.ticketId,
+      reason: data.reason
     });
   },
 
   // Reopen a closed ticket (Manager/Admin)
-  async reopenTicket(ticketId: string, reason: string): Promise<void> {
+  async reopenTicket(data: { ticketId: string, reason: string }): Promise<void> {
     await apiClient.post('/api/reopen-ticket', {
-      ticketId,
-      reason
+      ticketId: data.ticketId,
+      reason: data.reason
     });
   },
 
   // Cancel a ticket (Manager/Admin)
-  async cancelTicket(ticketId: string, reason: string): Promise<void> {
+  async cancelTicket(data: { ticketId: string, reason: string }): Promise<void> {
     await apiClient.post('/api/cancel-ticket', {
-      ticketId,
-      reason
+      ticketId: data.ticketId,
+      reason: data.reason
     });
   },
 
