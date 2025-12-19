@@ -118,10 +118,10 @@ export const ticketService = {
   // Review ticket approval (Manager/Admin)
   async reviewTicketApproval(request: ReviewTicketApprovalRequest): Promise<void> {
     const formData = new FormData();
-    formData.append('approvalId', request.approvalId);
-    formData.append('approvalStatus', request.approvalStatus);
-    formData.append('userId', request.userId);
-    // Note: backend model doesn't support reason field
+    formData.append('ApprovalId', request.approvalId);
+    formData.append('ApprovalStatus', request.approvalStatus);
+    formData.append('UserId', request.userId);
+    // Note: Field names must match C# property names exactly (case-sensitive)
 
     await apiClient.post(API_ENDPOINTS.APPROVAL.REVIEW, formData, {
       headers: {
