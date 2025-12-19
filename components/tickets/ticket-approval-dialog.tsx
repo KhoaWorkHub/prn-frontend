@@ -147,25 +147,25 @@ export function TicketApprovalDialog({
           break
 
         case 'review':
-          if (!approvalId) {
-            toast.error("Please enter approval ID")
-            return
+          // For WaitingForCloseApproval status, directly close/reject the ticket
+          if (approvalStatus === "Approved") {
+            // Close the ticket directly
+            await ticketService.closeTicket(ticket.ticketId, "Approved by manager", "Close approval granted")
+            
+            toast.success("Ticket approved and closed", {
+              description: "The ticket has been approved and closed successfully"
+            })
+          } else {
+            // Reopen the ticket for more work
+            await ticketService.reopenTicket({
+              ticketId: ticket.ticketId,
+              reason: "Close request rejected - needs more work"
+            })
+            
+            toast.success("Close request rejected", {
+              description: "Ticket reopened for additional work"
+            })
           }
-          
-          const reviewPayload = {
-            approvalId,
-            approvalStatus,
-            userId
-            // Note: reason field removed as backend doesn't support it
-          }
-          
-          console.log('📤 Sending review payload:', reviewPayload)
-          
-          await ticketService.reviewTicketApproval(reviewPayload)
-          
-          toast.success(`Ticket ${approvalStatus.toLowerCase()}`, {
-            description: `The ticket has been ${approvalStatus.toLowerCase()}`
-          })
           break
 
         case 'close':
@@ -361,27 +361,7 @@ export function TicketApprovalDialog({
 
           {approvalType === 'review' && (
             <div className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="approval-id">Approval ID *</Label>
-                <Input
-                  id="approval-id"
-                  placeholder="Auto-generated GUID"
-                  value={approvalId}
-                  onChange={(e) => setApprovalId(e.target.value)}
-                  required
-                />
-                <Button 
-                  type="button" 
-                  variant="outline" 
-                  size="sm"
-                  onClick={() => {
-                    const guid = crypto.randomUUID()
-                    setApprovalId(guid)
-                  }}
-                >
-                  Generate GUID
-                </Button>
-              </div>
+              {/* ApprovalID field removed - using direct close/reopen workflow */}
               
               <div className="space-y-2">
                 <Label htmlFor="approval-status">Decision</Label>
@@ -537,7 +517,6 @@ export function TicketApprovalDialog({
               onClick={handleApproval} 
               disabled={isProcessing || 
                 (approvalType === 'order-part' && !partDescription) || 
-                (approvalType === 'review' && !approvalId) || 
                 (approvalType === 'close' && !closeReason) ||
                 (approvalType === 'complete' && (!completionNotes || !completionResolution)) ||
                 (approvalType === 'unassign' && !unassignReason) ||
